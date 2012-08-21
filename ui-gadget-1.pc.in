@@ -1,0 +1,11 @@
+prefix=@PREFIX@
+exec_prefix=@EXEC_PREFIX@
+libdir=@LIBDIR@
+includedir=@INCLUDEDIR@/ug-1/
+
+Name: UI Gadget
+Description: UI Gadget Library
+Version: @VERSION@
+Requires: bundle x11 capi-appfw-application
+Libs: -L${libdir} -lui-gadget-1
+Cflags: -I${includedir}
