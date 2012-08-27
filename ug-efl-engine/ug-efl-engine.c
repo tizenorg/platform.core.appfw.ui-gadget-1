@@ -33,6 +33,12 @@
 #define UG_ENGINE_API __attribute__ ((visibility("default")))
 #endif
 
+struct cb_data {
+	ui_gadget_h ug;
+	void(*hide_end_cb)(ui_gadget_h ug);
+};
+
+
 static void _on_hideonly_cb(void *data, Evas_Object *obj)
 {
 	ui_gadget_h ug = (ui_gadget_h)data;
@@ -70,22 +76,6 @@ static void _signal_hideonly_finished(void *data, Evas_Object *obj,
 		ug->layout_state = UG_LAYOUT_HIDE;
 }
 
-static void _signal_hide_finished(void *data, Evas_Object *obj,
-				  const char *emission, const char *source)
-{
-	ui_gadget_h ug = (ui_gadget_h )data;
-	if (!ug)
-		return;
-
-	evas_object_intercept_hide_callback_del(ug->layout, _on_hideonly_cb);
-
-	evas_object_hide(ug->layout);
-	elm_object_part_content_unset(ug->effect_layout, "elm.swallow.content");
-	evas_object_hide(ug->effect_layout);
-	evas_object_del(ug->effect_layout);
-	ug->effect_layout = NULL;
-}
-
 static void _del_effect_layout(ui_gadget_h ug)
 {
 	if (!ug || !ug->effect_layout)
@@ -100,10 +90,34 @@ static void _del_effect_layout(ui_gadget_h ug)
 	ug->effect_layout = NULL;
 }
 
+static void _signal_hide_finished(void *data, Evas_Object *obj,
+				  const char *emission, const char *source)
+{
+	struct cb_data *cb_d = (struct cb_data*)data;
+
+	if (!cb_d)
+		return;
+
+	ui_gadget_h ug = cb_d->ug;
+
+	_del_effect_layout(ug);
+	cb_d->hide_end_cb(ug);
+	free(cb_d);
+}
+
 static void _signal_hidealready_finished(void *data, Evas_Object *obj,
 				const char *emission, const char *source)
 {
-	_del_effect_layout((ui_gadget_h)data);
+	struct cb_data *cb_d = (struct cb_data*)data;
+
+	if (!cb_d)
+		return;
+
+	ui_gadget_h ug = cb_d->ug;
+
+	_del_effect_layout(ug);
+	cb_d->hide_end_cb(ug);
+	free(cb_d);
 }
 
 static void _do_destroy(ui_gadget_h ug, ui_gadget_h fv_top)
@@ -208,9 +222,10 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 }
 
 static void *on_create(void *win, ui_gadget_h ug,
-		       void (*hide_end_cb) (ui_gadget_h  ug))
+		       void (*hide_end_cb) (ui_gadget_h ug))
 {
 	static const char *ug_effect_edj_name = "/usr/share/edje/ug_effect.edj";
+	struct cb_data *cb_d;
 
 	Evas_Object *ly = elm_layout_add((Evas_Object *) win);
 
@@ -224,18 +239,17 @@ static void *on_create(void *win, ui_gadget_h ug,
 	evas_object_show(ly);
 
 	evas_object_hide(ug->layout);
+
+	cb_d = calloc(1, sizeof(struct cb_data));
+	cb_d->ug = ug;
+	cb_d->hide_end_cb = hide_end_cb;
+
 	edje_object_signal_callback_add(elm_layout_edje_get(ly),
 					"elm,action,hide,finished", "",
-					_signal_hide_finished, ug);
-	edje_object_signal_callback_add(elm_layout_edje_get(ly),
-					"elm,action,hide,finished", "",
-					(Edje_Signal_Cb) hide_end_cb, ug);
+					_signal_hide_finished, cb_d);
 	edje_object_signal_callback_add(elm_layout_edje_get(ly),
 					"elm,action,hidealready,finished", "",
-					_signal_hidealready_finished, ug);
-	edje_object_signal_callback_add(elm_layout_edje_get(ly),
-					"elm,action,hidealready,finished", "",
-					(Edje_Signal_Cb) hide_end_cb, ug);
+					_signal_hidealready_finished, cb_d);
 	edje_object_signal_callback_add(elm_layout_edje_get(ly),
 					"elm,action,hideonly,finished", "",
 					_signal_hideonly_finished, ug);

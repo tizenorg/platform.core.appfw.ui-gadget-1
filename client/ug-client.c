@@ -119,13 +119,6 @@ static void show_popup(Evas_Object *win, const char *name)
 
 	evas_object_size_hint_weight_set(pu, EVAS_HINT_EXPAND,
 					 EVAS_HINT_EXPAND);
-#if 0
-	elm_popup_mode_set(pu, ELM_POPUP_TYPE_ALERT);
-	elm_popup_timeout_set(pu, 2);
-	snprintf(buf, POPUP_TITLE_MAX, "Received result from %s", name);
-	elm_popup_title_label_set(pu, buf);
-	evas_object_smart_callback_add(pu, "response", close_popup, NULL);
-#endif
 	evas_object_show(pu);
 }
 
