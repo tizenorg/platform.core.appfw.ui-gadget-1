@@ -2,7 +2,7 @@
 Name:       ui-gadget-1
 Summary:    UI Gadget Library
 Version:    0.1.0
-Release:    9
+Release:    10
 Group:      TO_BE/FILLED_IN
 License:    TO BE FILLED IN
 Source0:    %{name}-%{version}.tar.gz
@@ -58,6 +58,6 @@ ln -sf /usr/bin/ug-client /usr/bin/ug-launcher
 %files devel
 %defattr(-,root,root,-)
 %{_includedir}/ug-1/*.h
-%{_libdir}/*.so
+%{_libdir}/libui-gadget-1.so
 %{_libdir}/pkgconfig/%{name}.pc
 
