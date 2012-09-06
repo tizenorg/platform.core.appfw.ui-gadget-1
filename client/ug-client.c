@@ -29,8 +29,6 @@
 
 #include "ug-client.h"
 
-#define POPUP_TITLE_MAX (128)
-
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif
@@ -97,29 +95,6 @@ static int rotate(enum appcore_rm m, void *data)
 		elm_win_rotation_with_resize_set(ad->win, r);
 
 	return 0;
-}
-
-static void close_popup(void *data, Evas_Object *obj, void *event_info)
-{
-	evas_object_del(obj);
-	elm_exit();
-}
-
-static void show_popup(Evas_Object *win, const char *name)
-{
-	Evas_Object *pu;
-	char buf[POPUP_TITLE_MAX];
-
-	if (!name || !win)
-		return;
-
-	pu = elm_popup_add(win);
-	if (!pu)
-		return;
-
-	evas_object_size_hint_weight_set(pu, EVAS_HINT_EXPAND,
-					 EVAS_HINT_EXPAND);
-	evas_object_show(pu);
 }
 
 void layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
@@ -326,6 +301,10 @@ static int app_reset(bundle *b, void *data)
 	cbs.priv = ad;
 
 	ad->ug = ug_create(NULL, ad->name, mode, service, &cbs);
+	if (ad->ug == NULL) {
+		LOGE("ug_create fail: %s\n", ad->name);
+		elm_exit();
+	}
 
 	return 0;
 }
