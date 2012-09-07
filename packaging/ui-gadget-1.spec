@@ -16,6 +16,7 @@ BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(appsvc)
 BuildRequires:  pkgconfig(capi-appfw-application)
+BuildRequires:  pkgconfig(capi-system-runtime-info)
 BuildRequires:  cmake
 BuildRequires:  edje-bin
 

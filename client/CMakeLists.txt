@@ -9,6 +9,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE(FindPkgConfig)
 PKG_CHECK_MODULES(CLIENT_PKGS REQUIRED
 	capi-appfw-application
+	capi-system-runtime-info
 	appcore-efl
 	appsvc
 	bundle

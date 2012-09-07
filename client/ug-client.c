@@ -26,6 +26,7 @@
 #include <dlog.h>
 #include <aul.h>
 #include <appsvc.h>
+#include <runtime_info.h>
 
 #include "ug-client.h"
 
@@ -65,9 +66,15 @@ static int rotate(enum appcore_rm m, void *data)
 {
 	struct appdata *ad = data;
 	int r;
+	bool is_rotation_lock = false;
 
 	if (ad == NULL || ad->win == NULL)
 		return 0;
+
+	/* rotation lock */
+	r = runtime_info_get_value_bool(RUNTIME_INFO_KEY_ROTATION_LOCK_ENABLED, &is_rotation_lock);
+	if ( !r && is_rotation_lock)
+		m = APPCORE_RM_PORTRAIT_NORMAL;
 
 	switch (m) {
 	case APPCORE_RM_PORTRAIT_NORMAL:
@@ -90,9 +97,6 @@ static int rotate(enum appcore_rm m, void *data)
 		r = -1;
 		break;
 	}
-
-	if (r >= 0)
-		elm_win_rotation_with_resize_set(ad->win, r);
 
 	return 0;
 }
@@ -209,6 +213,7 @@ static int lang_changed(void *data)
 static int app_create(void *data)
 {
 	struct appdata *ad = data;
+	enum appcore_rm rm;
 	Evas_Object *win;
 	Evas_Object *ly;
 
@@ -229,6 +234,9 @@ static int app_create(void *data)
 	ad->ly_main = ly;
 
 	lang_changed(ad);
+
+	if (appcore_get_rotation_state(&rm) == 0)
+		rotate(rm, ad);
 
 	appcore_set_rotation_cb(rotate, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LOW_MEMORY, low_memory, ad);
