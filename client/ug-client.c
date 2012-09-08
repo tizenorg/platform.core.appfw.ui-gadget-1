@@ -235,13 +235,13 @@ static int app_create(void *data)
 
 	lang_changed(ad);
 
-	if (appcore_get_rotation_state(&rm) == 0)
-		rotate(rm, ad);
-
 	appcore_set_rotation_cb(rotate, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LOW_MEMORY, low_memory, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LOW_BATTERY, low_battery, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LANG_CHANGE, lang_changed, ad);
+
+	if (appcore_get_rotation_state(&rm) == 0)
+		rotate(rm, ad);
 
 	return 0;
 }
