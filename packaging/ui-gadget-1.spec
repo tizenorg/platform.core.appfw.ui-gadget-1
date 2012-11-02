@@ -2,7 +2,7 @@
 Name:       ui-gadget-1
 Summary:    UI Gadget Library
 Version:    0.1.0
-Release:    11
+Release:    12
 Group:      TO_BE/FILLED_IN
 License:    TO BE FILLED IN
 Source0:    %{name}-%{version}.tar.gz
@@ -49,6 +49,7 @@ ln -sf /usr/bin/ug-client /usr/bin/ug-launcher
 %postun -p /sbin/ldconfig
 
 %files
+%manifest ui-gadget-1.manifest
 %defattr(-,root,root,-)
 %{_libdir}/*.so.*
 %{_libdir}/lib%{name}-efl-engine.so
