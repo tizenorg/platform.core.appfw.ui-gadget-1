@@ -78,7 +78,7 @@ struct ug_module *ug_module_load(const char *name)
 		snprintf(ug_file, PATH_MAX, "/usr/ug/lib/libug-%s.so", name);
 		if (file_exist(ug_file))
 			break;
-		snprintf(ug_file, PATH_MAX, "/opt/ug/lib/libug-%s.so", name);
+		snprintf(ug_file, PATH_MAX, "/opt/usr/ug/lib/libug-%s.so", name);
 		if (file_exist(ug_file))
 			break;
 	} while (0);
