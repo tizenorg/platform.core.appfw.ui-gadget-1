@@ -98,6 +98,9 @@ static int rotate(enum appcore_rm m, void *data)
 		break;
 	}
 
+	if(r >= 0)
+		elm_win_rotation_with_resize_set(ad->win, r);
+
 	return 0;
 }
 
