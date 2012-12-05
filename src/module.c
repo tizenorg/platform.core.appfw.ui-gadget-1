@@ -51,7 +51,6 @@ struct ug_module *ug_module_load(const char *name)
 	struct ug_module *module;
 	char ug_file[PATH_MAX];
 
-	char *pkg_name = NULL;
 	uid_t uid;
 
 	int (*module_init) (struct ug_module_ops *ops);
@@ -63,10 +62,14 @@ struct ug_module *ug_module_load(const char *name)
 		return NULL;
 	}
 
+#if 0
+	char *pkg_name = NULL;
 	pkg_name = getenv("PKG_NAME");
 	uid = geteuid();
+#endif
 
 	do {
+#if 0
 		if (pkg_name) {
 			snprintf(ug_file, PATH_MAX, "/usr/apps/%s/lib/libug-%s.so", pkg_name, name);
 			if (file_exist(ug_file))
@@ -75,6 +78,7 @@ struct ug_module *ug_module_load(const char *name)
 			if (file_exist(ug_file))
 				break;
 		}
+#endif
 		snprintf(ug_file, PATH_MAX, "/usr/ug/lib/libug-%s.so", name);
 		if (file_exist(ug_file))
 			break;

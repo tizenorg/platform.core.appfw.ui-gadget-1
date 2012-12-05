@@ -65,6 +65,7 @@ int ug_free(ui_gadget_h ug)
 	if (ug->service)
 		service_destroy(ug->service);
 	free(ug);
+	ug = NULL;
 	return 0;
 }
 

@@ -1,7 +1,7 @@
 
 Name:       ui-gadget-1
 Summary:    UI Gadget Library
-Version:    0.1.2
+Version:    0.1.3
 Release:    1
 Group:      TO_BE/FILLED_IN
 License:    TO BE FILLED IN

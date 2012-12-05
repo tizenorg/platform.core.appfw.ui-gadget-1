@@ -265,7 +265,7 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 		return -1;
 	}
 
-	switch (UG_OPT_INDICATOR(opt)) {
+	switch (opt) {
 	case UG_OPT_INDICATOR_ENABLE:
 		if (event == UG_EVENT_NONE)
 			enable = 1;
@@ -283,6 +283,8 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 	case UG_OPT_INDICATOR_DISABLE:
 		enable = 0;
 		break;
+	case UG_OPT_INDICATOR_MANUAL:
+		return 0;
 	default:
 		_ERR("ugman_indicator_update failed: Invalid opt\n");
 		return -1;
@@ -299,7 +301,7 @@ static int ugman_ug_getopt(ui_gadget_h ug)
 		return -1;
 	/* Indicator Option */
 	if (ug->mode == UG_MODE_FULLVIEW)
-		ugman_indicator_update(UG_OPT_INDICATOR(ug->opt), UG_EVENT_NONE);
+		ugman_indicator_update(ug->opt, UG_EVENT_NONE);
 
 	return 0;
 }
@@ -703,7 +705,7 @@ int ugman_send_event(enum ug_event event)
 	g_idle_add(ugman_send_event_pre, (void *)event);
 
 	if (is_rotation && ug_man.fv_top)
-		ugman_indicator_update(UG_OPT_INDICATOR(ug_man.fv_top->opt), event);
+		ugman_indicator_update(ug_man.fv_top->opt, event);
 
 	return 0;
 }

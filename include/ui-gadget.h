@@ -109,9 +109,6 @@ enum ug_key_event {
 	UG_KEY_EVENT_MAX
 };
 
-#define UG_OPT_INDICATOR_MASK (0x03)
-#define UG_OPT_INDICATOR(opt) (opt & UG_OPT_INDICATOR_MASK)
-
 /**
  * UI gadget option
  * - Indicator option: [1, 0] bits
@@ -129,6 +126,9 @@ enum ug_option {
 	UG_OPT_INDICATOR_DISABLE = 0x03,
 			/**< Indicator option:
 			Disable with both portrait and landscape view window */
+	UG_OPT_INDICATOR_MANUAL = 0x04,
+			/**< Indicator option:
+			Indicator will be handled manually */
 	UG_OPT_MAX
 };
 
