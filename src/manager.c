@@ -423,7 +423,7 @@ static int ugman_ug_create(void *data)
 		}
 		if (ug->mode == UG_MODE_FULLVIEW) {
 			if (eng_ops && eng_ops->create)
-				ug->effect_layout = eng_ops->create(ug_man.win, ug, ug_hide_end_cb);
+				eng_ops->create(ug_man.win, ug);
 		}
 		cbs = &ug->cbs;
 
@@ -579,10 +579,9 @@ int ugman_ug_del(ui_gadget_h ug)
 
 	if (eng_ops && eng_ops->destroy)
 		if (ug->mode == UG_MODE_FULLVIEW)
-			eng_ops->destroy(ug, ug_man.fv_top);
+			eng_ops->destroy(ug, ug_man.fv_top, ug_hide_end_cb);
 		else {
-			eng_ops->destroy(ug, NULL);
-			g_idle_add(ugman_ug_destroy, ug);
+			eng_ops->destroy(ug, NULL, ug_hide_end_cb);
 		}
 	else
 		g_idle_add(ugman_ug_destroy, ug);

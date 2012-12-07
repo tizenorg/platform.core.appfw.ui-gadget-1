@@ -19,8 +19,6 @@
  *
  */
 
-
-
 #include <glib.h>
 #include <Elementary.h>
 #include <ui-gadget-engine.h>
@@ -33,136 +31,166 @@
 #define UG_ENGINE_API __attribute__ ((visibility("default")))
 #endif
 
+static Evas_Object *navi = NULL;
+static Evas_Object *conform = NULL;
 struct cb_data {
 	ui_gadget_h ug;
-	void(*hide_end_cb)(ui_gadget_h ug);
+	void (*hide_end_cb)(ui_gadget_h ug);
 };
-
+static void __hide_finished(void *data, Evas_Object *obj, void *event_info);
 
 static void _on_hideonly_cb(void *data, Evas_Object *obj)
 {
 	ui_gadget_h ug = (ui_gadget_h)data;
+	Elm_Object_Item *navi_top;
+
 	if (!ug)
 		return;
 
-	if (ug->layout_state == UG_LAYOUT_SHOW) {
-		ug->layout_state = UG_LAYOUT_HIDEEFFECT;
-		edje_object_signal_emit(elm_layout_edje_get(ug->effect_layout),
-					"elm,state,hideonly", "");
-	}
-}
-
-static void _signal_hideonly_finished(void *data, Evas_Object *obj,
-				      const char *emission, const char *source)
-{
-	ui_gadget_h ug = (ui_gadget_h)data;
-	if (!ug)
-		return;
+	_DBG("\t[%s][%d] obj=%p ug=%p state=%d\n", __FUNCTION__, __LINE__, obj,
+		ug, ug->layout_state);
 
 	evas_object_intercept_hide_callback_del(ug->layout, _on_hideonly_cb);
 
-	evas_object_hide(ug->layout);
-	elm_object_part_content_unset(ug->effect_layout, "elm.swallow.content");
+	if (ug->layout_state == UG_LAYOUT_NOEFFECT) {
+		;
+	}
 
-	if (ug->layout_state == UG_LAYOUT_NOEFFECT)
-		return;
+	if (ug->layout_state == UG_LAYOUT_SHOW) {
+		ug->layout_state = UG_LAYOUT_HIDEEFFECT;
+	}
 
-	evas_object_hide(ug->effect_layout);
-
-	if (ug->layout_state == UG_LAYOUT_DESTROY)
-		edje_object_signal_emit(elm_layout_edje_get(ug->effect_layout),
-					"elm,state,hidealready", "");
-	else
-		ug->layout_state = UG_LAYOUT_HIDE;
+	navi_top = elm_naviframe_top_item_get(navi);
+	if (navi_top == ug->effect_layout) {
+		elm_naviframe_item_pop(navi);
+	} else {
+		elm_object_item_del(ug->effect_layout);
+		ug->effect_layout = NULL;
+	}
 }
 
 static void _del_effect_layout(ui_gadget_h ug)
 {
-	if (!ug || !ug->effect_layout)
+	GSList *child, *trail;
+
+	if (!ug)
 		return;
+
+	_DBG("\t[%s][%d] ug=%p state=%d\n", __FUNCTION__, __LINE__, ug,
+		ug->layout_state);
 
 	evas_object_intercept_hide_callback_del(ug->layout, _on_hideonly_cb);
-
-	evas_object_hide(ug->layout);
-	elm_object_part_content_unset(ug->effect_layout, "elm.swallow.content");
-	evas_object_hide(ug->effect_layout);
-	evas_object_del(ug->effect_layout);
-	ug->effect_layout = NULL;
-}
-
-static void _signal_hide_finished(void *data, Evas_Object *obj,
-				  const char *emission, const char *source)
-{
-	struct cb_data *cb_d = (struct cb_data*)data;
-
-	if (!cb_d)
-		return;
-
-	ui_gadget_h ug = cb_d->ug;
-
-	_del_effect_layout(ug);
-	cb_d->hide_end_cb(ug);
-	free(cb_d);
-}
-
-static void _signal_hidealready_finished(void *data, Evas_Object *obj,
-				const char *emission, const char *source)
-{
-	struct cb_data *cb_d = (struct cb_data*)data;
-
-	if (!cb_d)
-		return;
-
-	ui_gadget_h ug = cb_d->ug;
-
-	_del_effect_layout(ug);
-	cb_d->hide_end_cb(ug);
-	free(cb_d);
-}
-
-static void _do_destroy(ui_gadget_h ug, ui_gadget_h fv_top)
-{
-	GSList *child;
-	GSList *trail;
-	static int depth = 0;
 
 	if (ug->children) {
 		child = ug->children;
 		while (child) {
 			trail = g_slist_next(child);
-			depth++;
-			_do_destroy(child->data, fv_top);
-			depth--;
+			_del_effect_layout(child->data);
 			child = trail;
 		}
 	}
 
-	_DBG("[UG Effect Plug-in] : start destroy. ug(%p), fv_top(%p),"
-					" depth(%d), layout_state(%d)\n",
-					 ug, fv_top, depth, ug->layout_state);
-
-	/* fv_top is null while destroying frameview ug */
-	if (fv_top == NULL) {
-		_del_effect_layout(ug);
-		return;
-	}
-	/* only show transition effect of top view UG */
-	if (ug != fv_top) {
-		if (depth) {
-			_del_effect_layout(ug);
-			return;
+	/* effect_layout of frameview is null */
+	/* remove navi item */
+	if (ug->effect_layout) {
+		_DBG("\t[%s][%d] remove navi tiem: ug=%p\n", __FUNCTION__,
+			__LINE__,ug);
+		if (ug->layout_state == UG_LAYOUT_HIDEEFFECT) {
+			_DBG("\t del cb, ug=%p\n", ug);
+			evas_object_smart_callback_del(navi, "transition,finished",
+							__hide_finished);
 		}
+		elm_object_item_del(ug->effect_layout);
+		ug->effect_layout = NULL;
+	}
+
+	if (navi) {
+		Elm_Object_Item *t = elm_naviframe_top_item_get(navi);
+		Elm_Object_Item *b = elm_naviframe_bottom_item_get(navi);
+		if (t == b) {
+			_DBG("\t[%s][%d]remove navi\n", __FUNCTION__, __LINE__);
+			evas_object_del(navi);
+			navi = NULL;
+		}
+	}
+	evas_object_hide(ug->layout);
+}
+
+static void __hide_finished(void *data, Evas_Object *obj, void *event_info)
+{
+	struct cb_data *cb_d = (struct cb_data *)data;
+
+	if (!cb_d)
+		return;
+
+	evas_object_smart_callback_del(obj, "transition,finished",
+					__hide_finished);
+
+	ui_gadget_h ug = cb_d->ug;
+	_DBG("\t[%s][%d] obj=%p ug=%p state=%d\n", __FUNCTION__, __LINE__, obj,
+		ug, ug->layout_state);
+
+	ug->effect_layout = NULL;
+	_del_effect_layout(ug);
+	cb_d->hide_end_cb(ug);
+	free(cb_d);
+}
+
+static int __find_child(ui_gadget_h p, ui_gadget_h ug)
+{
+	GSList *child = NULL;
+
+	if (!p || !ug)
+		return 0;
+	child = p->children;
+
+	while (child) {
+		if (child->data == ug)
+			return 1;
+		if (__find_child(child->data, ug))
+			return 1;
+		child = g_slist_next(child);
+	}
+
+	return 0;
+}
+
+static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
+		       void (*hide_end_cb) (ui_gadget_h ug))
+{
+	struct cb_data *cb_d;
+	Elm_Object_Item *navi_top;
+
+	if (!ug)
+		return;
+	_DBG("\t[%s][%d] ug=%p tug=%p state=%d\n", __FUNCTION__, __LINE__, ug,
+		t_ug, ug->layout_state);
+
+	evas_object_intercept_hide_callback_del(ug->layout,
+						_on_hideonly_cb);
+
+	if (ug != t_ug) {
+		_del_effect_layout(ug);
+		hide_end_cb(ug);
+		return;
 	}
 
 	if (ug->layout_state == UG_LAYOUT_SHOW) {
-		evas_object_intercept_hide_callback_del(ug->layout,
-							_on_hideonly_cb);
-		edje_object_signal_emit(elm_layout_edje_get(ug->effect_layout),
-					"elm,state,hide", "");
+		struct cb_data *cb_d;
+		cb_d = (struct cb_data *)calloc(1, sizeof(struct cb_data));
+		cb_d->ug = ug;
+		cb_d->hide_end_cb = hide_end_cb;
+
+		_DBG("\t[%s][%d]cb add ug=%p\n", __FUNCTION__, __LINE__, ug);
+
+		evas_object_smart_callback_add(navi, "transition,finished",
+					__hide_finished, cb_d);
+		elm_naviframe_item_pop(navi);
+		ug->layout_state = UG_LAYOUT_HIDEEFFECT;
 	} else if (ug->layout_state == UG_LAYOUT_HIDE
 		   || ug->layout_state == UG_LAYOUT_NOEFFECT) {
-		edje_object_signal_emit(elm_layout_edje_get(ug->effect_layout),
-					"elm,state,hidealready", "");
+		_del_effect_layout(ug);
+		hide_end_cb(ug);
 	} else if (ug->layout_state == UG_LAYOUT_HIDEEFFECT
 		   || ug->layout_state == UG_LAYOUT_SHOWEFFECT) {
 		ug->layout_state = UG_LAYOUT_DESTROY;
@@ -171,26 +199,22 @@ static void _do_destroy(ui_gadget_h ug, ui_gadget_h fv_top)
 	}
 }
 
-static void on_destroy(ui_gadget_h ug, ui_gadget_h fv_top)
+static void __show_finished(void *data, Evas_Object *obj, void *event_info)
 {
+	ui_gadget_h ug = (ui_gadget_h) data;
 	if (!ug)
 		return;
-	_do_destroy(ug, fv_top);
-}
+	_DBG("\t[%s][%d] obj=%p ug=%p state=%d\n", __FUNCTION__, __LINE__, obj,
+		ug, ug->layout_state);
 
-static void _signal_show_finished(void *data, Evas_Object *obj,
-				  const char *emission, const char *source)
-{
-	ui_gadget_h ug = (ui_gadget_h )data;
-	if (!ug)
-		return;
+	evas_object_smart_callback_del(obj, "transition,finished",
+					__show_finished);
 
 	if (ug->layout_state == UG_LAYOUT_NOEFFECT)
 		return;
 
 	if (ug->layout_state == UG_LAYOUT_DESTROY)
-		edje_object_signal_emit(elm_layout_edje_get(ug->effect_layout),
-					"elm,state,hide", "");
+		;
 	else
 		ug->layout_state = UG_LAYOUT_SHOW;
 }
@@ -198,71 +222,75 @@ static void _signal_show_finished(void *data, Evas_Object *obj,
 static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 		       void *event_info)
 {
-	ui_gadget_h ug = (ui_gadget_h )data;
+	ui_gadget_h ug = (ui_gadget_h)data;
 	if (!ug)
 		return;
+	_DBG("\t[%s][%d] obj=%p ug=%p state=%d\n", __FUNCTION__, __LINE__, obj,
+		ug, ug->layout_state);
 
-	if (ug->layout_state == UG_LAYOUT_NOEFFECT) {
-		evas_object_hide(ug->effect_layout);
-		evas_object_show(ug->layout);
-		return;
-	}
+	evas_object_intercept_hide_callback_add(ug->layout,
+						_on_hideonly_cb, ug);
+
+	elm_object_part_content_set(conform, "elm.swallow.ug", navi);
 
 	if (ug->layout_state == UG_LAYOUT_HIDE
 	    || ug->layout_state == UG_LAYOUT_INIT) {
+		_DBG("\t UG_LAYOUT_Init obj=%p\n", obj);
 		ug->layout_state = UG_LAYOUT_SHOWEFFECT;
-		evas_object_show(ug->effect_layout);
-		elm_object_part_content_set(ug->effect_layout, "elm.swallow.content",
-				       ug->layout);
-		evas_object_intercept_hide_callback_add(ug->layout,
-							_on_hideonly_cb, ug);
-		edje_object_signal_emit(elm_layout_edje_get(ug->effect_layout),
-					"elm,state,show", "");
+		evas_object_smart_callback_add(navi, "transition,finished",
+						__show_finished, ug);
+		ug->effect_layout = elm_naviframe_item_push(navi, NULL, NULL, NULL,
+						    ug->layout, NULL);
+	} else if (ug->layout_state == UG_LAYOUT_NOEFFECT) {
+		_DBG("\t UG_LAYOUT_NOEFFECT obj=%p\n", obj);
+		Elm_Object_Item *navi_top = elm_naviframe_top_item_get(navi);
+		ug->effect_layout = elm_naviframe_item_insert_after(navi,
+				navi_top, NULL, NULL, NULL, ug->layout, NULL);
+	} else {
+		_ERR("\t [%s][%d] layout state error!! state=%d\n",
+			__FUNCTION__, __LINE__, ug->layout_state);
 	}
 }
 
-static void *on_create(void *win, ui_gadget_h ug,
-		       void (*hide_end_cb) (ui_gadget_h ug))
+static void *on_create(void *win, ui_gadget_h ug)
 {
+	const Eina_List *l;
+	Evas_Object *subobj;
+	Evas_Object *navi_bg;
+	Evas_Object *con = NULL;
 	static const char *ug_effect_edj_name = "/usr/share/edje/ug_effect.edj";
-	struct cb_data *cb_d;
 
-	Evas_Object *ly = elm_layout_add((Evas_Object *) win);
+	_DBG("[%s][%d] START==========>\n", __FUNCTION__, __LINE__);
 
-	if (!ly)
-		return NULL;
+	con = evas_object_data_get(win, "\377 elm,conformant");
+	if (con) {
+		conform = con;
+		_DBG("\t There is conformant\n");
+	}
+	else
+		_DBG("\t There is NO conformant\n");
 
-	evas_object_size_hint_weight_set(ly, EVAS_HINT_EXPAND,
-					 EVAS_HINT_EXPAND);
-	elm_win_resize_object_add((Evas_Object *) win, ly);
-	elm_layout_file_set(ly, ug_effect_edj_name, "ug_effect");
-	evas_object_show(ly);
+	if (!navi) {
+		navi = elm_naviframe_add(conform);
+		elm_object_style_set(navi, "uglib");
+		elm_naviframe_content_preserve_on_pop_set(navi, EINA_TRUE);
+		_DBG("\t new navi first navi=%p\n", navi);
+		elm_naviframe_prev_btn_auto_pushed_set(navi, EINA_FALSE);
+
+		navi_bg = evas_object_rectangle_add(evas_object_evas_get(navi));
+		evas_object_size_hint_fill_set(navi_bg, EVAS_HINT_FILL,
+						EVAS_HINT_FILL);
+		evas_object_color_set(navi_bg, 0, 0, 0, 0);
+		elm_naviframe_item_push(navi, NULL, NULL, NULL, navi_bg, NULL);
+	}
 
 	evas_object_hide(ug->layout);
-
-	cb_d = calloc(1, sizeof(struct cb_data));
-	cb_d->ug = ug;
-	cb_d->hide_end_cb = hide_end_cb;
-
-	edje_object_signal_callback_add(elm_layout_edje_get(ly),
-					"elm,action,hide,finished", "",
-					_signal_hide_finished, cb_d);
-	edje_object_signal_callback_add(elm_layout_edje_get(ly),
-					"elm,action,hidealready,finished", "",
-					_signal_hidealready_finished, cb_d);
-	edje_object_signal_callback_add(elm_layout_edje_get(ly),
-					"elm,action,hideonly,finished", "",
-					_signal_hideonly_finished, ug);
-	edje_object_signal_callback_add(elm_layout_edje_get(ly),
-					"elm,action,show,finished", "",
-					_signal_show_finished, ug);
-
 	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_SHOW,
 				       on_show_cb, ug);
 
 	ug->layout_state = UG_LAYOUT_INIT;
 
-	return ly;
+	return NULL;
 }
 
 UG_ENGINE_API int UG_ENGINE_INIT(struct ug_engine_ops *ops)

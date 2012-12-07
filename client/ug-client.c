@@ -26,6 +26,7 @@
 #include <dlog.h>
 #include <aul.h>
 #include <appsvc.h>
+#include <app.h>
 #include <runtime_info.h>
 
 #include "ug-client.h"
@@ -122,8 +123,8 @@ void layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
 	case UG_MODE_FULLVIEW:
 		evas_object_size_hint_weight_set(base, EVAS_HINT_EXPAND,
 						 EVAS_HINT_EXPAND);
-		elm_win_resize_object_add(ad->win, base);
 		ug_disable_effect(ug);
+		elm_object_content_set(ad->ly_main, base);
 		evas_object_show(base);
 		break;
 	case UG_MODE_FRAMEVIEW:
@@ -157,6 +158,16 @@ void destroy_cb(ui_gadget_h ug, void *priv)
 	elm_exit();
 }
 
+static void profile_changed_cb(void *data, Evas_Object * obj, void *event)
+{
+	const char *profile = elm_config_profile_get();
+
+	if (strcmp(profile, "desktop") == 0)
+		elm_win_indicator_mode_set (obj, ELM_WIN_INDICATOR_HIDE);
+	else
+		elm_win_indicator_mode_set (obj, ELM_WIN_INDICATOR_SHOW);
+}
+
 static Evas_Object *create_win(const char *name)
 {
 	Evas_Object *eo;
@@ -165,9 +176,9 @@ static Evas_Object *create_win(const char *name)
 	eo = elm_win_add(NULL, name, ELM_WIN_BASIC);
 	if (eo) {
 		elm_win_title_set(eo, name);
-		elm_win_borderless_set(eo, EINA_TRUE);
 		evas_object_smart_callback_add(eo, "delete,request",
 					       win_del, NULL);
+		evas_object_smart_callback_add(eo, "profile,changed", profile_changed_cb, NULL);
 		ecore_x_window_size_get(ecore_x_window_root_first_get(),
 					&w, &h);
 		evas_object_resize(eo, w, h);
@@ -181,7 +192,6 @@ static Evas_Object *load_edj(Evas_Object *parent, const char *file,
 {
 	Evas_Object *eo;
 	int r;
-
 	eo = elm_layout_add(parent);
 	if (eo) {
 		r = elm_layout_file_set(eo, file, group);
@@ -189,12 +199,10 @@ static Evas_Object *load_edj(Evas_Object *parent, const char *file,
 			evas_object_del(eo);
 			return NULL;
 		}
-
 		evas_object_size_hint_weight_set(eo,
 						 EVAS_HINT_EXPAND,
 						 EVAS_HINT_EXPAND);
 	}
-
 	return eo;
 }
 
@@ -219,6 +227,8 @@ static int app_create(void *data)
 	enum appcore_rm rm;
 	Evas_Object *win;
 	Evas_Object *ly;
+	Evas_Object *conform;
+	Evas_Object *bg;
 
 	/* create window */
 	win = create_win(PACKAGE);
@@ -227,24 +237,36 @@ static int app_create(void *data)
 	ad->win = win;
 	UG_INIT_EFL(ad->win, UG_OPT_INDICATOR_ENABLE);
 
+	bg = elm_bg_add(win);
+	evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	elm_win_resize_object_add(win, bg);
+	evas_object_show(bg);
+
+	conform = elm_conformant_add(win);
+	evas_object_size_hint_weight_set(conform, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
+	ad->conform = conform;
+
 	/* load edje */
-	ly = load_edj(win, EDJ_FILE, GRP_MAIN);
+	ly = load_edj(conform, EDJ_FILE, GRP_MAIN);
 	if (ly == NULL)
 		return -1;
-	elm_win_resize_object_add(win, ly);
+	elm_win_resize_object_add(win, conform);
+
+	evas_object_show(conform);
+	elm_object_content_set(conform, ly);
 	edje_object_signal_callback_add(elm_layout_edje_get(ly),
 					"EXIT", "*", main_quit_cb, NULL);
 	ad->ly_main = ly;
-
+	elm_win_indicator_mode_set(win, ELM_WIN_INDICATOR_SHOW);
 	lang_changed(ad);
+
+	if (appcore_get_rotation_state(&rm) == 0)
+		rotate(rm, ad);
 
 	appcore_set_rotation_cb(rotate, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LOW_MEMORY, low_memory, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LOW_BATTERY, low_battery, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LANG_CHANGE, lang_changed, ad);
-
-	if (appcore_get_rotation_state(&rm) == 0)
-		rotate(rm, ad);
 
 	return 0;
 }
@@ -265,7 +287,13 @@ static int app_terminate(void *data)
 
 static int app_pause(void *data)
 {
+	struct appdata *ad = data;
+
 	ug_pause();
+	if (!ad->is_transient) {
+		LOGD("app_pause received. close ug service\n");
+		elm_exit();
+	}
 	return 0;
 }
 
@@ -281,18 +309,20 @@ static int svc_cb(void *data)
 	return 0;
 }
 
-extern int service_create_event(bundle *data, service_h *service);
-extern int appsvc_request_transient_app(bundle *b, Ecore_X_Window callee_id, appsvc_host_res_fn cbfunc, void *data);
-
 static int app_reset(bundle *b, void *data)
 {
 	struct appdata *ad = data;
 	struct ug_cbs cbs = { 0, };
 	service_h service;
 	enum ug_mode mode = UG_MODE_FULLVIEW;
-
+	int ret;
 	Ecore_X_Window id2 = elm_win_xwindow_get(ad->win);
-	appsvc_request_transient_app(b, id2, svc_cb, "svc test");
+
+	ret = appsvc_request_transient_app(b, id2, svc_cb, "svc test");
+	if (ret)
+		LOGD("fail to request transient app: return value(%d)\n", ret);
+	else
+		ad->is_transient = 1;
 
 	if (ad->win) {
 		elm_win_activate(ad->win);
@@ -310,6 +340,8 @@ static int app_reset(bundle *b, void *data)
 	cbs.destroy_cb = destroy_cb;
 	cbs.result_cb = result_cb;
 	cbs.priv = ad;
+
+	mode = ad->is_frameview ? UG_MODE_FRAMEVIEW : UG_MODE_FULLVIEW;
 
 	ad->ug = ug_create(NULL, ad->name, mode, service, &cbs);
 	if (ad->ug == NULL) {
@@ -366,6 +398,12 @@ int main(int argc, char *argv[])
 			case 'n':
 				if (optarg)
 					ad.name = strdup(optarg);
+				break;
+			case 'f':
+				ad.is_frameview = 1;
+				break;
+			case 'F':
+				ad.is_frameview = 0;
 				break;
 			case 'd':
 				if (update_argument(optarg, &ad)) {
