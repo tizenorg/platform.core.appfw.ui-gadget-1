@@ -79,13 +79,13 @@ struct ug_engine *ug_engine_load()
 
 	handle = dlopen(engine_file, RTLD_LAZY);
 	if (!handle) {
-		_ERR("dlopen failed: %s\n", dlerror());
+		_ERR("dlopen failed: %s", dlerror());
 		goto engine_free;
 	}
 
 	engine_init = dlsym(handle, UG_ENGINE_INIT_SYM);
 	if (!engine_init) {
-		_ERR("dlsym failed: %s\n", dlerror());
+		_ERR("dlsym failed: %s", dlerror());
 		goto engine_dlclose;
 	}
 
@@ -117,7 +117,7 @@ int ug_engine_unload(struct ug_engine *engine)
 		if (engine_exit)
 			engine_exit(&engine->ops);
 		else
-			_ERR("dlsym failed: %s\n", dlerror());
+			_ERR("dlsym failed: %s", dlerror());
 
 		dlclose(engine->handle);
 	}

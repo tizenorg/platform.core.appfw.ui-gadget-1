@@ -28,10 +28,10 @@
 #undef LOG_TAG
 #endif
 
-#define LOG_TAG "UIGadget-1"
+#define LOG_TAG "UI_GADGET"
 
-#define _ERR(...) LOGE(__VA_ARGS__)
-#define _DBG(...) LOGD(__VA_ARGS__)
-#define _INFO(...) LOGI(__VA_ARGS__)
+#define _ERR(fmt, arg...) LOGE("\x1b[33m" fmt "\x1b[0m", ##arg);
+#define _DBG(fmt, arg...) LOGD("\x1b[32m" fmt "\x1b[0m", ##arg);
+#define _INFO(fmt, arg...) LOGI("\x1b[31m" fmt "\x1b[0m", ##arg);
 
 #endif				/* __UG_DBG_H__ */

@@ -35,7 +35,7 @@
 #undef LOG_TAG
 #endif
 
-#define LOG_TAG "UGClient"
+#define LOG_TAG "UI_GADGET_CLIENT"
 
 static void prt_usage(const char *cmd)
 {
@@ -146,7 +146,7 @@ void result_cb(ui_gadget_h ug, service_h result, void *priv)
 
 	ret = service_reply_to_launch_request(result, ad->request, SERVICE_RESULT_SUCCEEDED);
 	if (ret != SERVICE_ERROR_NONE)
-		LOGE("service_reply_to_launch_request failed, %d\n", ret);
+		LOGE("service_reply_to_launch_request failed, %d", ret);
 }
 
 void destroy_cb(ui_gadget_h ug, void *priv)
@@ -345,7 +345,7 @@ static int app_reset(bundle *b, void *data)
 
 	ad->ug = ug_create(NULL, ad->name, mode, service, &cbs);
 	if (ad->ug == NULL) {
-		LOGE("ug_create fail: %s\n", ad->name);
+		LOGE("ug_create fail: %s", ad->name);
 		elm_exit();
 	}
 

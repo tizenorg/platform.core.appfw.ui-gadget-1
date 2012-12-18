@@ -73,7 +73,7 @@ static int ug_relation_del(ui_gadget_h ug)
 
 	p = ug->parent;
 	if (!p) {
-		_ERR("ug_relation_del failed: no parent\n");
+		_ERR("ug_relation_del failed: no parent");
 		return -1;
 	}
 	p->children = g_slist_remove(p->children, ug);
@@ -119,8 +119,8 @@ static void ugman_tree_dump(ui_gadget_h ug)
 	name = ug->name;
 	if (ug == ug_man.root) {
 		i = 0;
-		_DBG("\n============== TREE_DUMP =============\n");
-		_DBG("ROOT: Manager\n");
+		_DBG("============== TREE_DUMP =============");
+		_DBG("ROOT: Manager");
 		name = "Manager";
 	}
 
@@ -133,7 +133,7 @@ static void ugman_tree_dump(ui_gadget_h ug)
 
 	while (child) {
 		c = child->data;
-		_DBG("[%d] %s [%c] (%p) (PARENT:  %s)\n",
+		_DBG("[%d] %s [%c] (%p) (PARENT:  %s)",
 		     lv,
 		     c && c->name ? c->name : "NO CHILD INFO FIXIT!!!",
 		     c && c->mode == UG_MODE_FULLVIEW ? 'F' : 'f', c, name);
@@ -261,7 +261,7 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 	int cur_state;
 
 	if (!ug_man.win) {
-		_ERR("ugman_indicator_update failed: no window\n");
+		_ERR("ugman_indicator_update failed: no window");
 		return -1;
 	}
 
@@ -286,7 +286,7 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 	case UG_OPT_INDICATOR_MANUAL:
 		return 0;
 	default:
-		_ERR("ugman_indicator_update failed: Invalid opt\n");
+		_ERR("ugman_indicator_update failed: Invalid opt");
 		return -1;
 	}
 
@@ -443,13 +443,13 @@ static int ugman_ug_create(void *data)
 int ugman_ug_add(ui_gadget_h parent, ui_gadget_h ug)
 {
 	if (!ug_man.is_initted) {
-		_ERR("ugman_ug_add failed: manager is not initted\n");
+		_ERR("ugman_ug_add failed: manager is not initted");
 		return -1;
 	}
 
 	if (!ug_man.root) {
 		if (parent) {
-			_ERR("ugman_ug_add failed: parent has to be NULL w/o root\n");
+			_ERR("ugman_ug_add failed: parent has to be NULL w/o root");
 			errno = EINVAL;
 			return -1;
 		}
@@ -487,13 +487,13 @@ ui_gadget_h ugman_ug_load(ui_gadget_h parent,
 
 	ug = calloc(1, sizeof(struct ui_gadget_s));
 	if (!ug) {
-		_ERR("ug_create() failed: Memory allocation failed\n");
+		_ERR("ug_create() failed: Memory allocation failed");
 		return NULL;
 	}
 
 	ug->module = ug_module_load(name);
 	if (!ug->module) {
-		_ERR("ug_create() failed: Module loading failed\n");
+		_ERR("ug_create() failed: Module loading failed");
 		goto load_fail;
 	}
 
@@ -510,7 +510,7 @@ ui_gadget_h ugman_ug_load(ui_gadget_h parent,
 
 	r = ugman_ug_add(parent, ug);
 	if (r) {
-		_ERR("ug_create() failed: Tree update failed\n");
+		_ERR("ug_create() failed: Tree update failed");
 		goto load_fail;
 	}
 
@@ -552,23 +552,23 @@ int ugman_ug_del(ui_gadget_h ug)
 	struct ug_engine_ops *eng_ops = NULL;
 
 	if (!ug || !ugman_ug_exist(ug) || ug->state == UG_STATE_DESTROYED) {
-		_ERR("ugman_ug_del failed: Invalid ug\n");
+		_ERR("ugman_ug_del failed: Invalid ug");
 		errno = EINVAL;
 		return -1;
 	}
 
 	if (ug->destroy_me) {
-		_ERR("ugman_ug_del failed: ug is alreay on destroying\n");
+		_ERR("ugman_ug_del failed: ug is alreay on destroying");
 		return -1;
 	}
 
 	if (!ug_man.is_initted) {
-		_ERR("ugman_ug_del failed: manager is not initted\n");
+		_ERR("ugman_ug_del failed: manager is not initted");
 		return -1;
 	}
 
 	if (!ug_man.root) {
-		_ERR("ugman_ug_del failed: no root\n");
+		_ERR("ugman_ug_del failed: no root");
 		return -1;
 	}
 
@@ -593,12 +593,12 @@ int ugman_ug_del_all(void)
 {
 	/*  Terminate */
 	if (!ug_man.is_initted) {
-		_ERR("ugman_ug_del_all failed: manager is not initted\n");
+		_ERR("ugman_ug_del_all failed: manager is not initted");
 		return -1;
 	}
 
 	if (!ug_man.root) {
-		_ERR("ugman_ug_del_all failed: no root\n");
+		_ERR("ugman_ug_del_all failed: no root");
 		return -1;
 	}
 
@@ -627,12 +627,12 @@ int ugman_resume(void)
 {
 	/* RESUME */
 	if (!ug_man.is_initted) {
-		_ERR("ugman_resume failed: manager is not initted\n");
+		_ERR("ugman_resume failed: manager is not initted");
 		return -1;
 	}
 
 	if (!ug_man.root) {
-		_ERR("ugman_resume failed: no root\n");
+		_ERR("ugman_resume failed: no root");
 		return -1;
 	}
 
@@ -645,12 +645,12 @@ int ugman_pause(void)
 {
 	/* PAUSE (Background) */
 	if (!ug_man.is_initted) {
-		_ERR("ugman_pause failed: manager is not initted\n");
+		_ERR("ugman_pause failed: manager is not initted");
 		return -1;
 	}
 
 	if (!ug_man.root) {
-		_ERR("ugman_pause failed: no root\n");
+		_ERR("ugman_pause failed: no root");
 		return -1;
 	}
 
@@ -676,7 +676,7 @@ int ugman_send_event(enum ug_event event)
 
 	/* Propagate event */
 	if (!ug_man.is_initted) {
-		_ERR("ugman_send_event failed: manager is not initted\n");
+		_ERR("ugman_send_event failed: manager is not initted");
 		return -1;
 	}
 

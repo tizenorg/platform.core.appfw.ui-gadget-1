@@ -1,10 +1,10 @@
 
 Name:       ui-gadget-1
 Summary:    UI Gadget Library
-Version:    0.1.4
+Version:    0.1.5
 Release:    1
-Group:      TO_BE/FILLED_IN
-License:    TO BE FILLED IN
+Group:      System/Libraries
+License:    Apache License, Version 2.0
 Source0:    %{name}-%{version}.tar.gz
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig

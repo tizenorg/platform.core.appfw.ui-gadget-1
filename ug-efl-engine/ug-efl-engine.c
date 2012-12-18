@@ -47,8 +47,7 @@ static void _on_hideonly_cb(void *data, Evas_Object *obj)
 	if (!ug)
 		return;
 
-	_DBG("\t[%s][%d] obj=%p ug=%p state=%d\n", __FUNCTION__, __LINE__, obj,
-		ug, ug->layout_state);
+	_DBG("\t obj=%p ug=%p state=%d", obj, ug, ug->layout_state);
 
 	evas_object_intercept_hide_callback_del(ug->layout, _on_hideonly_cb);
 
@@ -76,8 +75,7 @@ static void _del_effect_layout(ui_gadget_h ug)
 	if (!ug)
 		return;
 
-	_DBG("\t[%s][%d] ug=%p state=%d\n", __FUNCTION__, __LINE__, ug,
-		ug->layout_state);
+	_DBG("\t ug=%p state=%d", ug, ug->layout_state);
 
 	evas_object_intercept_hide_callback_del(ug->layout, _on_hideonly_cb);
 
@@ -93,10 +91,9 @@ static void _del_effect_layout(ui_gadget_h ug)
 	/* effect_layout of frameview is null */
 	/* remove navi item */
 	if (ug->effect_layout) {
-		_DBG("\t[%s][%d] remove navi tiem: ug=%p\n", __FUNCTION__,
-			__LINE__,ug);
+		_DBG("\t remove navi tiem: ug=%p", ug);
 		if (ug->layout_state == UG_LAYOUT_HIDEEFFECT) {
-			_DBG("\t del cb, ug=%p\n", ug);
+			_DBG("\t del cb, ug=%p", ug);
 			evas_object_smart_callback_del(navi, "transition,finished",
 							__hide_finished);
 		}
@@ -108,7 +105,7 @@ static void _del_effect_layout(ui_gadget_h ug)
 		Elm_Object_Item *t = elm_naviframe_top_item_get(navi);
 		Elm_Object_Item *b = elm_naviframe_bottom_item_get(navi);
 		if (t == b) {
-			_DBG("\t[%s][%d]remove navi\n", __FUNCTION__, __LINE__);
+			_DBG("\t remove navi");
 			evas_object_del(navi);
 			navi = NULL;
 		}
@@ -127,8 +124,7 @@ static void __hide_finished(void *data, Evas_Object *obj, void *event_info)
 					__hide_finished);
 
 	ui_gadget_h ug = cb_d->ug;
-	_DBG("\t[%s][%d] obj=%p ug=%p state=%d\n", __FUNCTION__, __LINE__, obj,
-		ug, ug->layout_state);
+	_DBG("\t obj=%p ug=%p state=%d", obj, ug, ug->layout_state);
 
 	ug->effect_layout = NULL;
 	_del_effect_layout(ug);
@@ -163,8 +159,7 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 
 	if (!ug)
 		return;
-	_DBG("\t[%s][%d] ug=%p tug=%p state=%d\n", __FUNCTION__, __LINE__, ug,
-		t_ug, ug->layout_state);
+	_DBG("\t ug=%p tug=%p state=%d", ug, t_ug, ug->layout_state);
 
 	evas_object_intercept_hide_callback_del(ug->layout,
 						_on_hideonly_cb);
@@ -181,7 +176,7 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 		cb_d->ug = ug;
 		cb_d->hide_end_cb = hide_end_cb;
 
-		_DBG("\t[%s][%d]cb add ug=%p\n", __FUNCTION__, __LINE__, ug);
+		_DBG("\t cb add ug=%p", ug);
 
 		evas_object_smart_callback_add(navi, "transition,finished",
 					__hide_finished, cb_d);
@@ -204,8 +199,7 @@ static void __show_finished(void *data, Evas_Object *obj, void *event_info)
 	ui_gadget_h ug = (ui_gadget_h) data;
 	if (!ug)
 		return;
-	_DBG("\t[%s][%d] obj=%p ug=%p state=%d\n", __FUNCTION__, __LINE__, obj,
-		ug, ug->layout_state);
+	_DBG("\t obj=%p ug=%p state=%d", obj, ug, ug->layout_state);
 
 	evas_object_smart_callback_del(obj, "transition,finished",
 					__show_finished);
@@ -225,8 +219,7 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 	ui_gadget_h ug = (ui_gadget_h)data;
 	if (!ug)
 		return;
-	_DBG("\t[%s][%d] obj=%p ug=%p state=%d\n", __FUNCTION__, __LINE__, obj,
-		ug, ug->layout_state);
+	_DBG("\t obj=%p ug=%p state=%d", obj, ug, ug->layout_state);
 
 	evas_object_intercept_hide_callback_add(ug->layout,
 						_on_hideonly_cb, ug);
@@ -235,20 +228,19 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 
 	if (ug->layout_state == UG_LAYOUT_HIDE
 	    || ug->layout_state == UG_LAYOUT_INIT) {
-		_DBG("\t UG_LAYOUT_Init obj=%p\n", obj);
+		_DBG("\t UG_LAYOUT_Init obj=%p", obj);
 		ug->layout_state = UG_LAYOUT_SHOWEFFECT;
 		evas_object_smart_callback_add(navi, "transition,finished",
 						__show_finished, ug);
 		ug->effect_layout = elm_naviframe_item_push(navi, NULL, NULL, NULL,
 						    ug->layout, NULL);
 	} else if (ug->layout_state == UG_LAYOUT_NOEFFECT) {
-		_DBG("\t UG_LAYOUT_NOEFFECT obj=%p\n", obj);
+		_DBG("\t UG_LAYOUT_NOEFFECT obj=%p", obj);
 		Elm_Object_Item *navi_top = elm_naviframe_top_item_get(navi);
 		ug->effect_layout = elm_naviframe_item_insert_after(navi,
 				navi_top, NULL, NULL, NULL, ug->layout, NULL);
 	} else {
-		_ERR("\t [%s][%d] layout state error!! state=%d\n",
-			__FUNCTION__, __LINE__, ug->layout_state);
+		_ERR("\t layout state error!! state=%d\n", ug->layout_state);
 	}
 }
 
@@ -260,21 +252,19 @@ static void *on_create(void *win, ui_gadget_h ug)
 	Evas_Object *con = NULL;
 	static const char *ug_effect_edj_name = "/usr/share/edje/ug_effect.edj";
 
-	_DBG("[%s][%d] START==========>\n", __FUNCTION__, __LINE__);
-
 	con = evas_object_data_get(win, "\377 elm,conformant");
 	if (con) {
 		conform = con;
-		_DBG("\t There is conformant\n");
+		_DBG("\t There is conformant");
 	}
 	else
-		_DBG("\t There is NO conformant\n");
+		_DBG("\t There is NO conformant");
 
 	if (!navi) {
 		navi = elm_naviframe_add(conform);
 		elm_object_style_set(navi, "uglib");
 		elm_naviframe_content_preserve_on_pop_set(navi, EINA_TRUE);
-		_DBG("\t new navi first navi=%p\n", navi);
+		_DBG("\t new navi first navi=%p", navi);
 		elm_naviframe_prev_btn_auto_pushed_set(navi, EINA_FALSE);
 
 		navi_bg = evas_object_rectangle_add(evas_object_evas_get(navi));
