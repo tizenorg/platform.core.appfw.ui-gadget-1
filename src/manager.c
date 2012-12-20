@@ -394,7 +394,7 @@ static int ugman_ug_destroy(void *data)
 
 static void ug_hide_end_cb(ui_gadget_h ug)
 {
-	g_idle_add(ugman_ug_destroy, ug);
+	ecore_idler_add(ugman_ug_destroy, ug);
 }
 
 static int ugman_ug_create(void *data)
@@ -584,7 +584,7 @@ int ugman_ug_del(ui_gadget_h ug)
 			eng_ops->destroy(ug, NULL, ug_hide_end_cb);
 		}
 	else
-		g_idle_add(ugman_ug_destroy, ug);
+		ecore_idler_add(ugman_ug_destroy, ug);
 
 	return 0;
 }
@@ -636,7 +636,7 @@ int ugman_resume(void)
 		return -1;
 	}
 
-	g_idle_add(ugman_ug_resume, ug_man.root);
+	ecore_idler_add(ugman_ug_resume, ug_man.root);
 
 	return 0;
 }
@@ -654,7 +654,7 @@ int ugman_pause(void)
 		return -1;
 	}
 
-	g_idle_add(ugman_ug_pause, ug_man.root);
+	ecore_idler_add(ugman_ug_pause, ug_man.root);
 
 	return 0;
 }
@@ -701,7 +701,7 @@ int ugman_send_event(enum ug_event event)
 		return -1;
 	}
 
-	g_idle_add(ugman_send_event_pre, (void *)event);
+	ecore_idler_add(ugman_send_event_pre, (void *)event);
 
 	if (is_rotation && ug_man.fv_top)
 		ugman_indicator_update(ug_man.fv_top->opt, event);
