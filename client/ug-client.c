@@ -105,7 +105,7 @@ static int rotate(enum appcore_rm m, void *data)
 	return 0;
 }
 
-void layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
+void _ug_client_layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
 {
 	struct appdata *ad;
 	Evas_Object *base;
@@ -135,7 +135,7 @@ void layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
 	}
 }
 
-void result_cb(ui_gadget_h ug, service_h result, void *priv)
+void _ug_client_result_cb(ui_gadget_h ug, service_h result, void *priv)
 {
 	struct appdata *ad;
 	int ret;
@@ -149,7 +149,7 @@ void result_cb(ui_gadget_h ug, service_h result, void *priv)
 		LOGE("service_reply_to_launch_request failed, %d", ret);
 }
 
-void destroy_cb(ui_gadget_h ug, void *priv)
+void _ug_client_destroy_cb(ui_gadget_h ug, void *priv)
 {
 	if (!ug)
 		return;
@@ -187,7 +187,7 @@ static Evas_Object *create_win(const char *name)
 	return eo;
 }
 
-static Evas_Object *load_edj(Evas_Object *parent, const char *file,
+static Evas_Object *_ug_client_load_edj(Evas_Object *parent, const char *file,
 			     const char *group)
 {
 	Evas_Object *eo;
@@ -247,7 +247,7 @@ static int app_create(void *data)
 	ad->conform = conform;
 
 	/* load edje */
-	ly = load_edj(conform, EDJ_FILE, GRP_MAIN);
+	ly = _ug_client_load_edj(conform, EDJ_FILE, GRP_MAIN);
 	if (ly == NULL)
 		return -1;
 	elm_win_resize_object_add(win, conform);
@@ -276,11 +276,16 @@ static int app_terminate(void *data)
 	struct appdata *ad = data;
 
 	ug_destroy_all();
-	if (ad->ly_main)
-		evas_object_del(ad->ly_main);
 
-	if (ad->win)
+	if (ad->ly_main) {
+		evas_object_del(ad->ly_main);
+		ad->ly_main = NULL;
+	}
+
+	if (ad->win) {
 		evas_object_del(ad->win);
+		ad->win = NULL;
+	}
 
 	return 0;
 }
@@ -291,7 +296,7 @@ static int app_pause(void *data)
 
 	ug_pause();
 	if (!ad->is_transient) {
-		LOGD("app_pause received. close ug service\n");
+		LOGD("app_pause received. close ug service");
 		elm_exit();
 	}
 	return 0;
@@ -305,7 +310,7 @@ static int app_resume(void *data)
 
 static int svc_cb(void *data)
 {
-	LOGD("svc_cb called\n");
+	LOGD("svc_cb called");
 	return 0;
 }
 
@@ -320,7 +325,7 @@ static int app_reset(bundle *b, void *data)
 
 	ret = appsvc_request_transient_app(b, id2, svc_cb, "svc test");
 	if (ret)
-		LOGD("fail to request transient app: return value(%d)\n", ret);
+		LOGD("fail to request transient app: return value(%d)", ret);
 	else
 		ad->is_transient = 1;
 
@@ -334,16 +339,19 @@ static int app_reset(bundle *b, void *data)
 	else
 		service_create_event(b, &service);
 
-	service_clone(&ad->request, service);
+	if(service) {
+		service_clone(&ad->request, service);
+		service_destroy(service);
+	}
 
-	cbs.layout_cb = layout_cb;
-	cbs.destroy_cb = destroy_cb;
-	cbs.result_cb = result_cb;
+	cbs.layout_cb = _ug_client_layout_cb;
+	cbs.destroy_cb = _ug_client_destroy_cb;
+	cbs.result_cb = _ug_client_result_cb;
 	cbs.priv = ad;
 
 	mode = ad->is_frameview ? UG_MODE_FRAMEVIEW : UG_MODE_FULLVIEW;
 
-	ad->ug = ug_create(NULL, ad->name, mode, service, &cbs);
+	ad->ug = ug_create(NULL, ad->name, mode, ad->request, &cbs);
 	if (ad->ug == NULL) {
 		LOGE("ug_create fail: %s", ad->name);
 		elm_exit();

@@ -28,6 +28,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 
+#include <app_manager.h>
+
 #include "ug-module.h"
 #include "ug-dbg.h"
 
@@ -50,8 +52,7 @@ struct ug_module *ug_module_load(const char *name)
 	void *handle;
 	struct ug_module *module;
 	char ug_file[PATH_MAX];
-
-	uid_t uid;
+	char *pkg_name = NULL;
 
 	int (*module_init) (struct ug_module_ops *ops);
 
@@ -62,14 +63,9 @@ struct ug_module *ug_module_load(const char *name)
 		return NULL;
 	}
 
-#if 0
-	char *pkg_name = NULL;
-	pkg_name = getenv("PKG_NAME");
-	uid = geteuid();
-#endif
+	app_manager_get_package(getpid(), &pkg_name);
 
 	do {
-#if 0
 		if (pkg_name) {
 			snprintf(ug_file, PATH_MAX, "/usr/apps/%s/lib/libug-%s.so", pkg_name, name);
 			if (file_exist(ug_file))
@@ -78,7 +74,6 @@ struct ug_module *ug_module_load(const char *name)
 			if (file_exist(ug_file))
 				break;
 		}
-#endif
 		snprintf(ug_file, PATH_MAX, "/usr/ug/lib/libug-%s.so", name);
 		if (file_exist(ug_file))
 			break;
@@ -87,15 +82,20 @@ struct ug_module *ug_module_load(const char *name)
 			break;
 	} while (0);
 
+	if(pkg_name) {
+		free(pkg_name);
+		pkg_name = NULL;
+	}
+
 	handle = dlopen(ug_file, RTLD_LAZY);
 	if (!handle) {
-		_ERR("dlopen failed: %s\n", dlerror());
+		_ERR("dlopen failed: %s", dlerror());
 		goto module_free;
 	}
 
 	module_init = dlsym(handle, UG_MODULE_INIT_SYM);
 	if (!module_init) {
-		_ERR("dlsym failed: %s\n", dlerror());
+		_ERR("dlsym failed: %s", dlerror());
 		goto module_dlclose;
 	}
 
@@ -127,9 +127,10 @@ int ug_module_unload(struct ug_module *module)
 		if (module_exit)
 			module_exit(&module->ops);
 		else
-			_ERR("dlsym failed: %s\n", dlerror());
+			_ERR("dlsym failed: %s", dlerror());
 
 		dlclose(module->handle);
+		module->handle = NULL;
 	}
 
 	free(module);

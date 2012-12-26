@@ -39,7 +39,7 @@ ui_gadget_h ug_root_create(void)
 
 	ug = calloc(1, sizeof(struct ui_gadget_s));
 	if (!ug) {
-		_ERR("ug root create failed: Memory allocation failed\n");
+		_ERR("ug root create failed: Memory allocation failed");
 		return NULL;
 	}
 
@@ -53,17 +53,22 @@ ui_gadget_h ug_root_create(void)
 int ug_free(ui_gadget_h ug)
 {
 	if (!ug) {
-		_ERR("ug free failed: Invalid ug\n");
+		_ERR("ug free failed: Invalid ug");
 		errno = EINVAL;
 		return -1;
 	}
 
-	if (ug->module)
+	if (ug->module) {
 		ug_module_unload(ug->module);
-	if (ug->name)
+	}
+	if (ug->name) {
 		free((void *)ug->name);
-	if (ug->service)
+		ug->name = NULL;
+	}
+	if (ug->service) {
 		service_destroy(ug->service);
+		ug->service = NULL;
+	}
 	free(ug);
 	ug = NULL;
 	return 0;
@@ -75,13 +80,13 @@ UG_API ui_gadget_h ug_create(ui_gadget_h parent,
 				   service_h service, struct ug_cbs *cbs)
 {
 	if (!name) {
-		_ERR("ug_create() failed: Invalid name\n");
+		_ERR("ug_create() failed: Invalid name");
 		errno = EINVAL;
 		return NULL;
 	}
 
 	if (mode < UG_MODE_FULLVIEW || mode >= UG_MODE_INVALID) {
-		_ERR("ug_create() failed: Invalid mode\n");
+		_ERR("ug_create() failed: Invalid mode");
 		errno = EINVAL;
 		return NULL;
 	}
@@ -92,12 +97,12 @@ UG_API ui_gadget_h ug_create(ui_gadget_h parent,
 UG_API int ug_init(Display *disp, Window xid, void *win, enum ug_option opt)
 {
 	if (!win || !xid || !disp) {
-		_ERR("ug_init() failed: Invalid arguments\n");
+		_ERR("ug_init() failed: Invalid arguments");
 		return -1;
 	}
 
 	if (opt < UG_OPT_INDICATOR_ENABLE || opt >= UG_OPT_MAX) {
-		_ERR("ug_init() failed: Invalid option\n");
+		_ERR("ug_init() failed: Invalid option");
 		return -1;
 	}
 
@@ -127,7 +132,7 @@ UG_API int ug_destroy_all(void)
 UG_API int ug_destroy_me(ui_gadget_h ug)
 {
 	if (!ug || !ugman_ug_exist(ug)) {
-		_ERR("ug_destroy_me() failed: Invalid ug\n");
+		_ERR("ug_destroy_me() failed: Invalid ug");
 		errno = EINVAL;
 		return -1;
 	}
@@ -139,7 +144,7 @@ UG_API int ug_destroy_me(ui_gadget_h ug)
 
 	if (!ug->cbs.destroy_cb) {
 		_ERR("ug_destroy_me() failed: destroy callback does not "
-			"exist\n");
+			"exist");
 		return -1;
 	}
 
@@ -150,7 +155,7 @@ UG_API int ug_destroy_me(ui_gadget_h ug)
 UG_API void *ug_get_layout(ui_gadget_h ug)
 {
 	if (!ug || !ugman_ug_exist(ug)) {
-		_ERR("ug_get_layout() failed: Invalid ug\n");
+		_ERR("ug_get_layout() failed: Invalid ug");
 		errno = EINVAL;
 		return NULL;
 	}
@@ -161,7 +166,7 @@ UG_API void *ug_get_parent_layout(ui_gadget_h ug)
 {
 	ui_gadget_h parent;
 	if (!ug || !ugman_ug_exist(ug)) {
-		_ERR("ug_get_parent_layout() failed: Invalid ug\n");
+		_ERR("ug_get_parent_layout() failed: Invalid ug");
 		errno = EINVAL;
 		return NULL;
 	}
@@ -176,7 +181,7 @@ UG_API void *ug_get_parent_layout(ui_gadget_h ug)
 UG_API enum ug_mode ug_get_mode(ui_gadget_h ug)
 {
 	if (!ug || !ugman_ug_exist(ug)) {
-		_ERR("ug_get_mode() failed: Invalid ug\n");
+		_ERR("ug_get_mode() failed: Invalid ug");
 		errno = EINVAL;
 		return UG_MODE_INVALID;
 	}
@@ -192,7 +197,7 @@ UG_API void *ug_get_window(void)
 UG_API int ug_send_event(enum ug_event event)
 {
 	if (event <= UG_EVENT_NONE || event >= UG_EVENT_MAX) {
-		_ERR("ug_send_event() failed: Invalid event\n");
+		_ERR("ug_send_event() failed: Invalid event");
 		return -1;
 	}
 
@@ -202,7 +207,7 @@ UG_API int ug_send_event(enum ug_event event)
 UG_API int ug_send_key_event(enum ug_key_event event)
 {
 	if (event <= UG_KEY_EVENT_NONE || event >= UG_KEY_EVENT_MAX) {
-		_ERR("ug_send_key_event() failed: Invalid event\n");
+		_ERR("ug_send_key_event() failed: Invalid event");
 		return -1;
 	}
 
@@ -214,20 +219,20 @@ UG_API int ug_send_result(ui_gadget_h ug, service_h result)
 	service_h result_dup = NULL;
 
 	if (!ug || !ugman_ug_exist(ug)) {
-		_ERR("ug_send_result() failed: Invalid ug\n");
+		_ERR("ug_send_result() failed: Invalid ug");
 		errno = EINVAL;
 		return -1;
 	}
 
 	if (!ug->cbs.result_cb) {
-		_ERR("ug_send_result() failed: result callback does not exist\n");
+		_ERR("ug_send_result() failed: result callback does not exist");
 		return -1;
 	}
 
 	if (result) {
 		service_clone(&result_dup, result);
 		if (!result_dup) {
-			_ERR("ug_send_result() failed: service_destroy failed\n");
+			_ERR("ug_send_result() failed: service_destroy failed");
 			return -1;
 		}
 	}
@@ -248,7 +253,7 @@ UG_API int ug_send_message(ui_gadget_h ug, service_h msg)
 	if (msg) {
 		service_clone(&msg_dup, msg);
 		if (!msg_dup) {
-			_ERR("ug_send_message() failed: service_destroy failed\n");
+			_ERR("ug_send_message() failed: service_destroy failed");
 			return -1;
 		}
 	}
@@ -264,7 +269,7 @@ UG_API int ug_send_message(ui_gadget_h ug, service_h msg)
 UG_API int ug_disable_effect(ui_gadget_h ug)
 {
 	if (ug->layout_state != UG_LAYOUT_INIT) {
-		_ERR("ug_disable_effect() failed: ug has already been shown\n");
+		_ERR("ug_disable_effect() failed: ug has already been shown");
 		return -1;
 	}
 	ug->layout_state = UG_LAYOUT_NOEFFECT;

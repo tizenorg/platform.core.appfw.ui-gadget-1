@@ -366,8 +366,10 @@ static int ugman_ug_destroy(void *data)
 		}
 	}
 
-	if (ops && ops->destroy)
+	if (ops && ops->destroy) {
+		_DBG("ug module destory cb call");
 		ops->destroy(ug, ug->service, ops->priv);
+	}
 
 	ug_relation_del(ug);
 
@@ -574,6 +576,13 @@ int ugman_ug_del(ui_gadget_h ug)
 
 	ugman_ug_destroying(ug);
 
+	/* pre call for indicator update time issue */
+	if (ug_man.fv_top == ug) {
+		ui_gadget_h t;
+		t = g_slist_nth_data(ug_man.fv_list, 1);
+		ugman_ug_getopt(t);
+	}
+
 	if (ug_man.engine)
 		eng_ops = &ug_man.engine->ops;
 
@@ -697,7 +706,7 @@ int ugman_send_event(enum ug_event event)
 	}
 
 	if (!ug_man.root) {
-		_ERR("ugman_send_event failed: no root\n");
+		_ERR("ugman_send_event failed: no root");
 		return -1;
 	}
 
@@ -735,13 +744,13 @@ static int ugman_send_key_event_to_ug(ui_gadget_h ug,
 int ugman_send_key_event(enum ug_key_event event)
 {
 	if (!ug_man.is_initted) {
-		_ERR("ugman_send_key_event failed: manager is not initted\n");
+		_ERR("ugman_send_key_event failed: manager is not initted");
 		return -1;
 	}
 
 	if (!ug_man.fv_top || !ugman_ug_exist(ug_man.fv_top)
 	    || ug_man.fv_top->state == UG_STATE_DESTROYED) {
-		_ERR("ugman_send_key_event failed: full view top UG is invalid\n");
+		_ERR("ugman_send_key_event failed: full view top UG is invalid");
 		return -1;
 	}
 
@@ -752,13 +761,13 @@ int ugman_send_message(ui_gadget_h ug, service_h msg)
 {
 	struct ug_module_ops *ops = NULL;
 	if (!ug || !ugman_ug_exist(ug) || ug->state == UG_STATE_DESTROYED) {
-		_ERR("ugman_send_message failed: Invalid ug\n");
+		_ERR("ugman_send_message failed: Invalid ug");
 		errno = EINVAL;
 		return -1;
 	}
 
 	if (!msg) {
-		_ERR("ugman_send_message failed: Invalid msg\n");
+		_ERR("ugman_send_message failed: Invalid msg");
 		errno = EINVAL;
 		return -1;
 	}

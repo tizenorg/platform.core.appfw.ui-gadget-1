@@ -123,5 +123,6 @@ int ug_engine_unload(struct ug_engine *engine)
 	}
 
 	free(engine);
+	engine = NULL;
 	return 0;
 }
