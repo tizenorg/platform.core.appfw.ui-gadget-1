@@ -176,6 +176,7 @@ static Evas_Object *create_win(const char *name)
 	eo = elm_win_add(NULL, name, ELM_WIN_BASIC);
 	if (eo) {
 		elm_win_title_set(eo, name);
+		elm_win_conformant_set(eo, EINA_TRUE);
 		evas_object_smart_callback_add(eo, "delete,request",
 					       win_del, NULL);
 		evas_object_smart_callback_add(eo, "profile,changed", profile_changed_cb, NULL);
