@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <glib.h>
 #include <utilX.h>
+#include <Elementary.h>
 
 #include "ug.h"
 #include "ug-manager.h"
@@ -39,6 +40,7 @@ struct ug_manager {
 	void *win;
 	Window win_id;
 	Display *disp;
+	void *conform;
 
 	enum ug_option base_opt;
 	enum ug_event last_rotate_evt;
@@ -265,7 +267,15 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 		return -1;
 	}
 
-	switch (opt) {
+	if(GET_OPT_OVERLAP_VAL(opt)) {
+		_DBG("update overlap indicator / opt(%d)", opt);
+		elm_object_signal_emit(ug_man.conform, "elm,state,indicator,overlap", "");
+	} else {
+		_DBG("update no overlap indicator / opt(%d)", opt);
+		elm_object_signal_emit(ug_man.conform, "elm,state,indicator,nooverlap", "");
+	}
+
+	switch (GET_OPT_INDICATOR_VAL(opt)) {
 	case UG_OPT_INDICATOR_ENABLE:
 		if (event == UG_EVENT_NONE)
 			enable = 1;
@@ -337,6 +347,8 @@ static int ugman_ug_destroy(void *data)
 	struct ug_module_ops *ops = NULL;
 	GSList *child, *trail;
 
+	_DBG("\t ug=%p state=%d", ug, ug->layout_state);
+
 	job_start();
 
 	if (!ug)
@@ -391,6 +403,8 @@ static int ugman_ug_destroy(void *data)
  end:
 	job_end();
 
+	_DBG("ugman_ug_destroy end ug(%p)", ug);
+
 	return 0;
 }
 
@@ -425,7 +439,7 @@ static int ugman_ug_create(void *data)
 		}
 		if (ug->mode == UG_MODE_FULLVIEW) {
 			if (eng_ops && eng_ops->create)
-				eng_ops->create(ug_man.win, ug);
+				ug_man.conform = eng_ops->create(ug_man.win, ug);
 		}
 		cbs = &ug->cbs;
 
@@ -551,6 +565,8 @@ int ugman_ug_destroying(ui_gadget_h ug)
 
 int ugman_ug_del(ui_gadget_h ug)
 {
+	_DBG("\t ug=%p state=%d", ug, ug->layout_state);
+
 	struct ug_engine_ops *eng_ops = NULL;
 
 	if (!ug || !ugman_ug_exist(ug) || ug->state == UG_STATE_DESTROYED) {
@@ -785,6 +801,12 @@ void *ugman_get_window(void)
 {
 	return ug_man.win;
 }
+
+void *ugman_get_conformant(void)
+{
+	return ug_man.conform;
+}
+
 
 static inline void job_start(void)
 {

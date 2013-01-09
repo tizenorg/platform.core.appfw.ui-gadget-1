@@ -111,7 +111,6 @@ enum ug_key_event {
 
 /**
  * UI gadget option
- * - Indicator option: [1, 0] bits
  *
  * @see ug_init()
  */
@@ -129,8 +128,13 @@ enum ug_option {
 	UG_OPT_INDICATOR_MANUAL = 0x04,
 			/**< Indicator option:
 			Indicator will be handled manually */
+	UG_OPT_OVERLAP_ENABLE = 0x08,
+			/**< Overlap option: Enable indicator overlap  */
 	UG_OPT_MAX
 };
+
+#define GET_OPT_INDICATOR_VAL(opt) opt % UG_OPT_OVERLAP_ENABLE
+#define GET_OPT_OVERLAP_VAL(opt) opt & UG_OPT_OVERLAP_ENABLE
 
 /**
  * UI gadget callback type
@@ -509,6 +513,11 @@ void *ug_get_parent_layout(ui_gadget_h ug);
  * \endcode
  */
 void *ug_get_window(void);
+
+
+void *ug_get_conformant(void);
+
+
 
 /**
  * \par Description:

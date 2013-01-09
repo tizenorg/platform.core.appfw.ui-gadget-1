@@ -194,6 +194,11 @@ UG_API void *ug_get_window(void)
 	return ugman_get_window();
 }
 
+UG_API void *ug_get_conformant(void)
+{
+	return ugman_get_conformant();
+}
+
 UG_API int ug_send_event(enum ug_event event)
 {
 	if (event <= UG_EVENT_NONE || event >= UG_EVENT_MAX) {

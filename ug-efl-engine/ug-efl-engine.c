@@ -59,6 +59,11 @@ static void _on_hideonly_cb(void *data, Evas_Object *obj)
 		ug->layout_state = UG_LAYOUT_HIDEEFFECT;
 	}
 
+	if (GET_OPT_OVERLAP_VAL(ug->opt) == UG_OPT_OVERLAP_ENABLE) {
+		_DBG("\t this is Overlap UG. Send nooverlap sig on hide_cb");
+		elm_object_signal_emit(conform, "elm,state,indicator,nooverlap", "");
+	}
+
 	navi_top = elm_naviframe_top_item_get(navi);
 	if (navi_top == ug->effect_layout) {
 		elm_naviframe_item_pop(navi);
@@ -230,12 +235,24 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 	    || ug->layout_state == UG_LAYOUT_INIT) {
 		_DBG("\t UG_LAYOUT_Init obj=%p", obj);
 		ug->layout_state = UG_LAYOUT_SHOWEFFECT;
+
+		if (GET_OPT_OVERLAP_VAL(ug->opt)) {
+			_DBG("\t this is Overlap UG. Send overlap sig on_show_cb");
+			elm_object_signal_emit(conform, "elm,state,indicator,overlap", "");
+		}
+
 		evas_object_smart_callback_add(navi, "transition,finished",
 						__show_finished, ug);
 		ug->effect_layout = elm_naviframe_item_push(navi, NULL, NULL, NULL,
 						    ug->layout, NULL);
 	} else if (ug->layout_state == UG_LAYOUT_NOEFFECT) {
 		_DBG("\t UG_LAYOUT_NOEFFECT obj=%p", obj);
+
+		if (GET_OPT_OVERLAP_VAL(ug->opt)) {
+			_DBG("\t this is Overlap UG. Send overlap sig on_show_cb");
+			elm_object_signal_emit(conform, "elm,state,indicator,overlap", "");
+		}
+		
 		Elm_Object_Item *navi_top = elm_naviframe_top_item_get(navi);
 		ug->effect_layout = elm_naviframe_item_insert_after(navi,
 				navi_top, NULL, NULL, NULL, ug->layout, NULL);
@@ -251,6 +268,8 @@ static void *on_create(void *win, ui_gadget_h ug)
 	Evas_Object *navi_bg;
 	Evas_Object *con = NULL;
 	static const char *ug_effect_edj_name = "/usr/share/edje/ug_effect.edj";
+
+	_DBG("\t ug=%p state=%d", ug, ug->layout_state);
 
 	con = evas_object_data_get(win, "\377 elm,conformant");
 	if (con) {
@@ -280,7 +299,7 @@ static void *on_create(void *win, ui_gadget_h ug)
 
 	ug->layout_state = UG_LAYOUT_INIT;
 
-	return NULL;
+	return conform;
 }
 
 UG_ENGINE_API int UG_ENGINE_INIT(struct ug_engine_ops *ops)

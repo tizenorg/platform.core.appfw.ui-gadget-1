@@ -28,7 +28,7 @@ SET(SRCS src/ug.c
 
 ADD_LIBRARY(${PROJECT_NAME} SHARED ${SRCS})
 
-PKG_CHECK_MODULES(PKGS REQUIRED glib-2.0 utilX bundle dlog x11 capi-appfw-application appsvc capi-appfw-app-manager)
+PKG_CHECK_MODULES(PKGS REQUIRED glib-2.0 utilX bundle dlog x11 capi-appfw-application appsvc capi-appfw-app-manager elementary)
 FOREACH(flag ${PKGS_CFLAGS})
 	SET(CFLAGS "${CFLAGS} ${flag}")
 ENDFOREACH(flag)

@@ -42,6 +42,7 @@ int ugman_send_key_event(enum ug_key_event event);
 int ugman_send_message(ui_gadget_h ug, service_h msg);
 
 void *ugman_get_window(void);
+void *ugman_get_conformant(void);
 
 int ugman_ug_exist(ui_gadget_h ug);
 
