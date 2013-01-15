@@ -51,7 +51,7 @@ extern "C" {
  */
 struct ug_engine_ops {
 	/** create operation */
-	void *(*create)(void *win, ui_gadget_h ug);
+	void *(*create)(void *win, ui_gadget_h ug, void(*show_end_cb)(void *data));
 	/** destroy operation */
 	void (*destroy)(ui_gadget_h ug, ui_gadget_h fv_top, void(*hide_end_cb)(ui_gadget_h ug));
 	/** reserved operations */

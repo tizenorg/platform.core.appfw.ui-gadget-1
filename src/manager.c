@@ -25,7 +25,9 @@
 #include <errno.h>
 #include <glib.h>
 #include <utilX.h>
+
 #include <Elementary.h>
+#include <Ecore.h>
 
 #include "ug.h"
 #include "ug-manager.h"
@@ -172,6 +174,8 @@ static int ugman_ug_start(void *data)
 	    || ug->state == UG_STATE_RUNNING)
 		return 0;
 
+	_DBG("ug=%p", ug);
+
 	ug->state = UG_STATE_RUNNING;
 
 	if (ug->module)
@@ -263,7 +267,7 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 	int cur_state;
 
 	if (!ug_man.win) {
-		_ERR("ugman_indicator_update failed: no window");
+		_ERR("indicator update failed: no window");
 		return -1;
 	}
 
@@ -296,7 +300,7 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 	case UG_OPT_INDICATOR_MANUAL:
 		return 0;
 	default:
-		_ERR("ugman_indicator_update failed: Invalid opt");
+		_ERR("update failed: Invalid opt(%d)", opt);
 		return -1;
 	}
 
@@ -347,12 +351,12 @@ static int ugman_ug_destroy(void *data)
 	struct ug_module_ops *ops = NULL;
 	GSList *child, *trail;
 
-	_DBG("\t ug=%p state=%d", ug, ug->layout_state);
-
 	job_start();
 
 	if (!ug)
 		goto end;
+
+	_DBG("ugman_ug_destroy start ug(%p)", ug);
 
 	switch (ug->state) {
 	case UG_STATE_CREATED:
@@ -403,8 +407,6 @@ static int ugman_ug_destroy(void *data)
  end:
 	job_end();
 
-	_DBG("ugman_ug_destroy end ug(%p)", ug);
-
 	return 0;
 }
 
@@ -439,7 +441,7 @@ static int ugman_ug_create(void *data)
 		}
 		if (ug->mode == UG_MODE_FULLVIEW) {
 			if (eng_ops && eng_ops->create)
-				ug_man.conform = eng_ops->create(ug_man.win, ug);
+				ug_man.conform = eng_ops->create(ug_man.win, ug, ugman_ug_start);
 		}
 		cbs = &ug->cbs;
 
@@ -450,7 +452,6 @@ static int ugman_ug_create(void *data)
 	}
 
 	ugman_ug_event(ug, ug_man.last_rotate_evt);
-	ugman_ug_start(ug);
 	ugman_tree_dump(ug_man.root);
 
 	return 0;
@@ -565,8 +566,6 @@ int ugman_ug_destroying(ui_gadget_h ug)
 
 int ugman_ug_del(ui_gadget_h ug)
 {
-	_DBG("\t ug=%p state=%d", ug, ug->layout_state);
-
 	struct ug_engine_ops *eng_ops = NULL;
 
 	if (!ug || !ugman_ug_exist(ug) || ug->state == UG_STATE_DESTROYED) {
@@ -574,6 +573,8 @@ int ugman_ug_del(ui_gadget_h ug)
 		errno = EINVAL;
 		return -1;
 	}
+
+	_DBG("ugman_ug_del start ug(%p)", ug);
 
 	if (ug->destroy_me) {
 		_ERR("ugman_ug_del failed: ug is alreay on destroying");

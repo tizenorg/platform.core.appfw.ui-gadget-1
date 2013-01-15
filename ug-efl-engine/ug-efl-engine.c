@@ -35,7 +35,7 @@ static Evas_Object *navi = NULL;
 static Evas_Object *conform = NULL;
 struct cb_data {
 	ui_gadget_h ug;
-	void (*hide_end_cb)(ui_gadget_h ug);
+	void (*transition_cb)(ui_gadget_h ug);
 };
 static void __hide_finished(void *data, Evas_Object *obj, void *event_info);
 
@@ -96,7 +96,7 @@ static void _del_effect_layout(ui_gadget_h ug)
 	/* effect_layout of frameview is null */
 	/* remove navi item */
 	if (ug->effect_layout) {
-		_DBG("\t remove navi tiem: ug=%p", ug);
+		_DBG("\t remove navi item: ug=%p", ug);
 		if (ug->layout_state == UG_LAYOUT_HIDEEFFECT) {
 			_DBG("\t del cb, ug=%p", ug);
 			evas_object_smart_callback_del(navi, "transition,finished",
@@ -133,7 +133,7 @@ static void __hide_finished(void *data, Evas_Object *obj, void *event_info)
 
 	ug->effect_layout = NULL;
 	_del_effect_layout(ug);
-	cb_d->hide_end_cb(ug);
+	cb_d->transition_cb(ug);
 	free(cb_d);
 }
 
@@ -179,9 +179,11 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 		struct cb_data *cb_d;
 		cb_d = (struct cb_data *)calloc(1, sizeof(struct cb_data));
 		cb_d->ug = ug;
-		cb_d->hide_end_cb = hide_end_cb;
+		cb_d->transition_cb = hide_end_cb;
 
 		_DBG("\t cb add ug=%p", ug);
+
+		/* overlap update does not needed because manager will do that at on_destroy scenario */
 
 		evas_object_smart_callback_add(navi, "transition,finished",
 					__hide_finished, cb_d);
@@ -201,10 +203,15 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 
 static void __show_finished(void *data, Evas_Object *obj, void *event_info)
 {
-	ui_gadget_h ug = (ui_gadget_h) data;
+	struct cb_data *cb_d = (struct cb_data *)data;
+	if (!cb_d)
+		return;
+
+	ui_gadget_h ug = cb_d->ug;
 	if (!ug)
 		return;
-	_DBG("\t obj=%p ug=%p state=%d", obj, ug, ug->layout_state);
+
+	_DBG("\tobj=%p ug=%p state=%d", obj, ug, ug->layout_state);
 
 	evas_object_smart_callback_del(obj, "transition,finished",
 					__show_finished);
@@ -216,15 +223,21 @@ static void __show_finished(void *data, Evas_Object *obj, void *event_info)
 		;
 	else
 		ug->layout_state = UG_LAYOUT_SHOW;
+
+	cb_d->transition_cb(ug);
+	free(cb_d);
 }
 
 static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 		       void *event_info)
 {
-	ui_gadget_h ug = (ui_gadget_h)data;
+	struct cb_data *cb_d = (struct cb_data *)data;
+	if (!cb_d)
+		return;
+	ui_gadget_h ug = cb_d->ug;
 	if (!ug)
 		return;
-	_DBG("\t obj=%p ug=%p state=%d", obj, ug, ug->layout_state);
+	_DBG("\tobj=%p ug=%p state=%d", obj, ug, ug->layout_state);
 
 	evas_object_intercept_hide_callback_add(ug->layout,
 						_on_hideonly_cb, ug);
@@ -242,7 +255,7 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 		}
 
 		evas_object_smart_callback_add(navi, "transition,finished",
-						__show_finished, ug);
+						__show_finished, cb_d);
 		ug->effect_layout = elm_naviframe_item_push(navi, NULL, NULL, NULL,
 						    ug->layout, NULL);
 	} else if (ug->layout_state == UG_LAYOUT_NOEFFECT) {
@@ -252,16 +265,22 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 			_DBG("\t this is Overlap UG. Send overlap sig on_show_cb");
 			elm_object_signal_emit(conform, "elm,state,indicator,overlap", "");
 		}
-		
+
 		Elm_Object_Item *navi_top = elm_naviframe_top_item_get(navi);
 		ug->effect_layout = elm_naviframe_item_insert_after(navi,
 				navi_top, NULL, NULL, NULL, ug->layout, NULL);
+
+		//ug start cb
+		cb_d->transition_cb(ug);
+		free(cb_d);
 	} else {
-		_ERR("\t layout state error!! state=%d\n", ug->layout_state);
+		_ERR("\tlayout state error!! state=%d\n", ug->layout_state);
+		free(cb_d);
 	}
 }
 
-static void *on_create(void *win, ui_gadget_h ug)
+static void *on_create(void *win, ui_gadget_h ug,
+					void (*show_end_cb) (void* data))
 {
 	const Eina_List *l;
 	Evas_Object *subobj;
@@ -269,6 +288,8 @@ static void *on_create(void *win, ui_gadget_h ug)
 	Evas_Object *con = NULL;
 	static const char *ug_effect_edj_name = "/usr/share/edje/ug_effect.edj";
 
+	if (!ug)
+		return;
 	_DBG("\t ug=%p state=%d", ug, ug->layout_state);
 
 	con = evas_object_data_get(win, "\377 elm,conformant");
@@ -293,9 +314,13 @@ static void *on_create(void *win, ui_gadget_h ug)
 		elm_naviframe_item_push(navi, NULL, NULL, NULL, navi_bg, NULL);
 	}
 
+	struct cb_data *cb_d;
+	cb_d = (struct cb_data *)calloc(1, sizeof(struct cb_data));
+	cb_d->ug = ug;
+	cb_d->transition_cb = show_end_cb;
+
 	evas_object_hide(ug->layout);
-	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_SHOW,
-				       on_show_cb, ug);
+	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_SHOW, on_show_cb, cb_d);
 
 	ug->layout_state = UG_LAYOUT_INIT;
 

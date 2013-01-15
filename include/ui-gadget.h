@@ -508,16 +508,46 @@ void *ug_get_parent_layout(ui_gadget_h ug);
  * ...
  * Evas_Object *win;
  * // get default window
- * win = (Evas_Object *)ug_get_window(ug);
+ * win = (Evas_Object *)ug_get_window();
  * ...
  * \endcode
  */
 void *ug_get_window(void);
 
-
+/**
+ * \par Description:
+ * This function gets ug conformant
+ *
+ * \par Purpose:
+ * This function is used for getting ug conformant
+ *
+ * \par Typical use case:
+ * Anyone who want to get ug conformant could use the function.
+ *
+ * \par Method of function operation:
+ * This function returns ug conformant pointer
+ *
+ * \par Context of function:
+ * This function supposed to be called after successful initialization with ug_init()
+ *
+ * @return The pointer of default window, NULL on error. The result value is void pointer for supporting both GTK (GtkWidget *) and EFL (Evas_Object *)
+ *
+ * \pre ug_init()
+ * \post None
+ * \see None
+ * \remarks None
+ *
+ * \par Sample code:
+ * \code
+ * #include <ui-gadget.h>
+ * ...
+ * Evas_Object *conform;
+ * // get default window
+ * conform = (Evas_Object *)ug_get_conformant();
+ * ...
+ * \endcode
+ */
 void *ug_get_conformant(void);
-
-
 
 /**
  * \par Description:
