@@ -289,7 +289,7 @@ static void *on_create(void *win, ui_gadget_h ug,
 	static const char *ug_effect_edj_name = "/usr/share/edje/ug_effect.edj";
 
 	if (!ug)
-		return;
+		return NULL;
 	_DBG("\t ug=%p state=%d", ug, ug->layout_state);
 
 	con = evas_object_data_get(win, "\377 elm,conformant");
