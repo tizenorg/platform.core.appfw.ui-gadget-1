@@ -38,11 +38,11 @@ struct cb_data {
 	void (*transition_cb)(ui_gadget_h ug);
 };
 static void __hide_finished(void *data, Evas_Object *obj, void *event_info);
+static void on_show_cb(void *data, Evas *e, Evas_Object *obj, void *event_info);
 
 static void _on_hideonly_cb(void *data, Evas_Object *obj)
 {
 	ui_gadget_h ug = (ui_gadget_h)data;
-	Elm_Object_Item *navi_top;
 
 	if (!ug)
 		return;
@@ -50,6 +50,13 @@ static void _on_hideonly_cb(void *data, Evas_Object *obj)
 	_DBG("\t obj=%p ug=%p state=%d", obj, ug, ug->layout_state);
 
 	evas_object_intercept_hide_callback_del(ug->layout, _on_hideonly_cb);
+
+	struct cb_data *cb_d;
+	cb_d = (struct cb_data *)calloc(1, sizeof(struct cb_data));
+	cb_d->ug = ug;
+	cb_d->transition_cb = NULL;
+
+	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_SHOW, on_show_cb, cb_d);
 
 	if (ug->layout_state == UG_LAYOUT_NOEFFECT) {
 		;
@@ -64,8 +71,7 @@ static void _on_hideonly_cb(void *data, Evas_Object *obj)
 		elm_object_signal_emit(conform, "elm,state,indicator,nooverlap", "");
 	}
 
-	navi_top = elm_naviframe_top_item_get(navi);
-	if (navi_top == ug->effect_layout) {
+	if (elm_naviframe_top_item_get(navi) == ug->effect_layout) {
 		elm_naviframe_item_pop(navi);
 	} else {
 		elm_object_item_del(ug->effect_layout);
@@ -159,9 +165,6 @@ static int __find_child(ui_gadget_h p, ui_gadget_h ug)
 static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 		       void (*hide_end_cb) (ui_gadget_h ug))
 {
-	struct cb_data *cb_d;
-	Elm_Object_Item *navi_top;
-
 	if (!ug)
 		return;
 	_DBG("\t ug=%p tug=%p state=%d", ug, t_ug, ug->layout_state);
@@ -170,6 +173,7 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 						_on_hideonly_cb);
 
 	if (ug != t_ug) {
+		_DBG("requested ug(%p) is not top ug(%p)", ug, t_ug);
 		_del_effect_layout(ug);
 		hide_end_cb(ug);
 		return;
@@ -224,7 +228,8 @@ static void __show_finished(void *data, Evas_Object *obj, void *event_info)
 	else
 		ug->layout_state = UG_LAYOUT_SHOW;
 
-	cb_d->transition_cb(ug);
+	if(cb_d->transition_cb)
+		cb_d->transition_cb(ug);
 	free(cb_d);
 }
 
@@ -237,7 +242,9 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 	ui_gadget_h ug = cb_d->ug;
 	if (!ug)
 		return;
-	_DBG("\tobj=%p ug=%p state=%d", obj, ug, ug->layout_state);
+	_DBG("\tobj=%p ug=%p layout=%p state=%d", obj, ug, ug->layout, ug->layout_state);
+
+	evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_SHOW, on_show_cb);
 
 	evas_object_intercept_hide_callback_add(ug->layout,
 						_on_hideonly_cb, ug);
@@ -246,7 +253,7 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 
 	if (ug->layout_state == UG_LAYOUT_HIDE
 	    || ug->layout_state == UG_LAYOUT_INIT) {
-		_DBG("\t UG_LAYOUT_Init obj=%p", obj);
+		_DBG("\t UG_LAYOUT_Init(%d) obj=%p", ug->layout_state, obj);
 		ug->layout_state = UG_LAYOUT_SHOWEFFECT;
 
 		if (GET_OPT_OVERLAP_VAL(ug->opt)) {
@@ -271,7 +278,8 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 				navi_top, NULL, NULL, NULL, ug->layout, NULL);
 
 		//ug start cb
-		cb_d->transition_cb(ug);
+		if(cb_d->transition_cb)
+			cb_d->transition_cb(ug);
 		free(cb_d);
 	} else {
 		_ERR("\tlayout state error!! state=%d\n", ug->layout_state);
@@ -282,11 +290,8 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 static void *on_create(void *win, ui_gadget_h ug,
 					void (*show_end_cb) (void* data))
 {
-	const Eina_List *l;
-	Evas_Object *subobj;
 	Evas_Object *navi_bg;
 	Evas_Object *con = NULL;
-	static const char *ug_effect_edj_name = "/usr/share/edje/ug_effect.edj";
 
 	if (!ug)
 		return NULL;
