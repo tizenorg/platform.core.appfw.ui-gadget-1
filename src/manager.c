@@ -440,8 +440,10 @@ static int ugman_ug_create(void *data)
 			return -1;
 		}
 		if (ug->mode == UG_MODE_FULLVIEW) {
-			if (eng_ops && eng_ops->create)
+			if (eng_ops && eng_ops->create) {
+				//change start cb function call after transition,finished for fullview
 				ug_man.conform = eng_ops->create(ug_man.win, ug, ugman_ug_start);
+			}
 		}
 		cbs = &ug->cbs;
 
@@ -452,6 +454,10 @@ static int ugman_ug_create(void *data)
 	}
 
 	ugman_ug_event(ug, ug_man.last_rotate_evt);
+
+	if(ug->mode == UG_MODE_FRAMEVIEW)
+		ugman_ug_start(ug);
+
 	ugman_tree_dump(ug_man.root);
 
 	return 0;
