@@ -261,11 +261,8 @@ static int ugman_ug_resume(void *data)
 	return 0;
 }
 
-static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
+static int ugman_indicator_overlap_update(enum ug_option opt)
 {
-	int enable;
-	int cur_state;
-
 	if (!ug_man.win) {
 		_ERR("indicator update failed: no window");
 		return -1;
@@ -278,6 +275,14 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 		_DBG("update no overlap indicator / opt(%d)", opt);
 		elm_object_signal_emit(ug_man.conform, "elm,state,indicator,nooverlap", "");
 	}
+
+	return 0;
+}
+
+static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
+{
+	int enable;
+	int cur_state;
 
 	switch (GET_OPT_INDICATOR_VAL(opt)) {
 	case UG_OPT_INDICATOR_ENABLE:
@@ -313,9 +318,12 @@ static int ugman_ug_getopt(ui_gadget_h ug)
 {
 	if (!ug)
 		return -1;
+
 	/* Indicator Option */
-	if (ug->mode == UG_MODE_FULLVIEW)
+	if (ug->mode == UG_MODE_FULLVIEW) {
+		ugman_indicator_overlap_update(ug->opt);
 		ugman_indicator_update(ug->opt, UG_EVENT_NONE);
+	}
 
 	return 0;
 }
