@@ -659,7 +659,6 @@ static void layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
 		if (!win)
 			return;
 		evas_object_size_hint_weight_set(base, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-		elm_win_resize_object_add(win, base);
 		ug_disable_effect(ug);
 		evas_object_show(base);
 		break;
@@ -883,7 +882,6 @@ To disable transition effect :
 		switch (mode) {
 		case UG_MODE_FULLVIEW:
 			evas_object_size_hint_weight_set(base, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
-			elm_win_resize_object_add(win, base);
 			// disable effect
 			ug_disable_effect(ug);
 			evas_object_show(base);

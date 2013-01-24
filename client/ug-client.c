@@ -72,32 +72,29 @@ static int rotate(enum appcore_rm m, void *data)
 	if (ad == NULL || ad->win == NULL)
 		return 0;
 
-	/* rotation lock */
-	r = runtime_info_get_value_bool(RUNTIME_INFO_KEY_ROTATION_LOCK_ENABLED, &is_rotation_lock);
-	if ( !r && is_rotation_lock)
-		m = APPCORE_RM_PORTRAIT_NORMAL;
-
 	switch (m) {
-	case APPCORE_RM_PORTRAIT_NORMAL:
-		ug_send_event(UG_EVENT_ROTATE_PORTRAIT);
-		r = 0;
-		break;
-	case APPCORE_RM_PORTRAIT_REVERSE:
-		r = 180;
-		ug_send_event(UG_EVENT_ROTATE_PORTRAIT_UPSIDEDOWN);
-		break;
-	case APPCORE_RM_LANDSCAPE_NORMAL:
-		ug_send_event(UG_EVENT_ROTATE_LANDSCAPE);
-		r = 270;
-		break;
-	case APPCORE_RM_LANDSCAPE_REVERSE:
-		ug_send_event(UG_EVENT_ROTATE_LANDSCAPE_UPSIDEDOWN);
-		r = 90;
-		break;
-	default:
-		r = -1;
-		break;
+		case APPCORE_RM_PORTRAIT_NORMAL:
+			ug_send_event(UG_EVENT_ROTATE_PORTRAIT);
+			r = 0;
+			break;
+		case APPCORE_RM_PORTRAIT_REVERSE:
+			r = 180;
+			ug_send_event(UG_EVENT_ROTATE_PORTRAIT_UPSIDEDOWN);
+			break;
+		case APPCORE_RM_LANDSCAPE_NORMAL:
+			ug_send_event(UG_EVENT_ROTATE_LANDSCAPE);
+			r = 270;
+			break;
+		case APPCORE_RM_LANDSCAPE_REVERSE:
+			ug_send_event(UG_EVENT_ROTATE_LANDSCAPE_UPSIDEDOWN);
+			r = 90;
+			break;
+		default:
+			r = -1;
+			break;
 	}
+
+	LOGE("rotate cb / rm : %d , r : %d", m, r);
 
 	if(r >= 0)
 		elm_win_rotation_with_resize_set(ad->win, r);
