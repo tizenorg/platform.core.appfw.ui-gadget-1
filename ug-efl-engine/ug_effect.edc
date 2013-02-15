@@ -1,0 +1,137 @@
+/*
+ *  UI Gadget
+ *
+ * Copyright (c) 2000 - 2011 Samsung Electronics Co., Ltd. All rights reserved.
+ *
+ * Contact: Jayoun Lee <airjany@samsung.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+//TRANSLATION EFFECT
+#define NAVIFRAME_VIEW_TRANS_TIME 0.1
+
+collections {
+/*  group { name:"elm/naviframe/item/basic/uglib";
+      parts {
+         part { name: "base";
+            type: RECT;
+            mouse_events:  0;
+            description { state: "default" 0.0;
+               color: 255 255 255 255;
+            }
+            description { state: "right" 0.0;
+               inherit: "default" 0.0;
+               rel1.relative: 1.0 0.0;
+               rel2.relative: 2.0 1.0;
+               color: 255 255 255 0;
+            }
+         }
+         part { name: "elm.swallow.content";
+            type: SWALLOW;
+            scale: 1;
+            repeat_events: 0;
+            clip_to: "base";
+            description { state: "default" 0.0;
+               align: 0.0 0.0;
+               rel1.relative: 0.0 0.0;
+               rel1.to: "base";
+               rel2.relative: 1.0 1.0;
+               rel2.to: "base";
+            }
+         }
+      }
+      programs {
+         program { name: "content_new_pushed";
+            signal: "elm,state,new,pushed,internal";
+            source: "";
+            action: STATE_SET "default" 0.0;
+            target: "base";
+            transition: DECELERATE NAVIFRAME_VIEW_TRANS_TIME;
+            after: "show_finished";
+         }
+         program { name: "content_cur_pushed";
+            signal: "elm,state,cur,pushed,internal";
+            source: "";
+            action: STATE_SET "default" 0.0;
+            target: "base";
+            transition: DECELERATE NAVIFRAME_VIEW_TRANS_TIME;
+            after: "pushed_finished";
+         }
+         program { name: "content_prev_popped";
+            signal: "elm,state,prev,popped,internal";
+            source: "";
+            action: STATE_SET "default" 0.0;
+            target: "base";
+            transition: DECELERATE NAVIFRAME_VIEW_TRANS_TIME;
+            after: "show_finished";
+         }
+         program { name: "content_cur_popped";
+            signal: "elm,state,cur,popped,internal";
+            source: "";
+            action: STATE_SET "right" 0.0;
+            target: "base";
+            transition: DECELERATE NAVIFRAME_VIEW_TRANS_TIME;
+            after: "popped_finished";
+         }
+         program { name: "cur_pushed";
+            signal: "elm,state,cur,pushed";
+            source: "elm";
+            script {
+               set_state(PART:"base", "default", 0.0);
+               emit("elm,state,cur,pushed,internal", "");
+            }
+         }
+         program { name: "new_pushed";
+            signal: "elm,state,new,pushed";
+            source: "elm";
+            script {
+               set_state(PART:"base", "right", 0.0);
+               emit("elm,state,new,pushed,internal", "");
+            }
+         }
+         program { name: "prev_popped";
+            signal: "elm,state,prev,popped";
+            source: "elm";
+            script {
+               set_state(PART:"base", "default", 0.0);
+               emit("elm,state,prev,popped,internal", "");
+            }
+         }
+         program { name: "cur_popped";
+            signal: "elm,state,cur,popped";
+            source: "elm";
+            script {
+               set_state(PART:"base", "default", 0.0);
+               emit("elm,state,cur,popped,internal", "");
+            }
+         }
+         program { name: "visible";
+            signal: "elm,state,visible";
+            source: "elm";
+            action: STATE_SET "default" 0.0;
+            target: "base";
+         }
+         program { name: "show_finished";
+            action: SIGNAL_EMIT "elm,action,show,finished" "";
+         }
+         program { name: "pushed_finished";
+            action: SIGNAL_EMIT "elm,action,pushed,finished" "";
+         }
+         program { name: "popped_finished";
+            action: SIGNAL_EMIT "elm,action,popped,finished" "";
+         }
+      }
+   }*/
+}
