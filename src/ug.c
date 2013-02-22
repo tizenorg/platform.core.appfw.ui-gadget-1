@@ -138,7 +138,7 @@ UG_API int ug_destroy_me(ui_gadget_h ug)
 	}
 
 	if (ug->state == UG_STATE_DESTROYING) {
-		_ERR("ug_destory_me() failed:ug is alreay on destroying");
+		_ERR("ug_destory_me() failed:ug(%p) is already on destroying", ug);
 		return -1;
 	}
 

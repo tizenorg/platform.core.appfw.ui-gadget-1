@@ -25,6 +25,8 @@
 #include <errno.h>
 #include <glib.h>
 #include <utilX.h>
+#include <X11/Xatom.h>
+#include <X11/Xutil.h>
 
 #include <Elementary.h>
 #include <Ecore.h>
@@ -109,6 +111,99 @@ static int ug_fvlist_del(ui_gadget_h c)
 	return 0;
 }
 
+static int __ug_x_get_window_property(Display *dpy, Window win, Atom atom,
+					  Atom type, unsigned int *val,
+					  unsigned int len)
+{
+	unsigned char *prop_ret;
+	Atom type_ret;
+	unsigned long bytes_after;
+	unsigned long  num_ret;
+	int format_ret;
+	unsigned int i;
+	int num;
+
+	prop_ret = NULL;
+	if (XGetWindowProperty(dpy, win, atom, 0, 0x7fffffff, False,
+			       type, &type_ret, &format_ret, &num_ret,
+			       &bytes_after, &prop_ret) != Success)
+		return -1;
+
+	if (type_ret != type || format_ret != 32)
+		num = -1;
+	else if (num_ret == 0 || !prop_ret)
+		num = 0;
+	else {
+		if (num_ret < len)
+			len = num_ret;
+		for (i = 0; i < len; i++) {
+			val[i] = ((unsigned long *)prop_ret)[i];
+		}
+		num = len;
+	}
+
+	if (prop_ret)
+		XFree(prop_ret);
+
+	return num;
+}
+
+static enum ug_event __ug_x_rotation_get(Display *dpy, Window win)
+{
+	Window active_win;
+	Window root_win;
+	int rotation = -1;
+	int ret = -1;
+	enum ug_event func_ret;
+
+	Atom atom_active_win;
+	Atom atom_win_rotate_angle;
+
+	root_win = XDefaultRootWindow(dpy);
+
+	atom_active_win = XInternAtom(dpy, "_NET_ACTIVE_WINDOW", False);
+	ret = __ug_x_get_window_property(dpy, root_win, atom_active_win,
+					     XA_WINDOW,
+					     (unsigned int *)&active_win, 1);
+	if (ret < 0) {
+		func_ret = UG_EVENT_ROTATE_PORTRAIT;
+		goto func_out;
+	}
+
+	atom_win_rotate_angle =
+		XInternAtom(dpy, "_E_ILLUME_ROTATE_ROOT_ANGLE", False);
+	ret = __ug_x_get_window_property(dpy, root_win,
+					  atom_win_rotate_angle, XA_CARDINAL,
+					  (unsigned int *)&rotation, 1);
+
+	_DBG("x_rotation_get / ret(%d),degree(%d)", ret, rotation);
+
+	if (ret == -1)
+		func_ret = UG_EVENT_ROTATE_PORTRAIT;
+	else {
+		switch (rotation) {
+			case 0:
+				func_ret = UG_EVENT_ROTATE_PORTRAIT;
+				break;
+			case 90:
+				func_ret = UG_EVENT_ROTATE_LANDSCAPE_UPSIDEDOWN;
+				break;
+			case 180:
+				func_ret = UG_EVENT_ROTATE_PORTRAIT_UPSIDEDOWN;
+				break;
+			case 270:
+				func_ret = UG_EVENT_ROTATE_LANDSCAPE;
+				break;
+			default:
+				func_ret = UG_EVENT_ROTATE_PORTRAIT;
+				break;
+		}
+	}
+
+func_out:
+	return func_ret;
+}
+
 static void ugman_tree_dump(ui_gadget_h ug)
 {
 	static int i;
@@ -165,14 +260,18 @@ static int ugman_ug_find(ui_gadget_h p, ui_gadget_h ug)
 	return 0;
 }
 
-static int ugman_ug_start(void *data)
+static void ugman_ug_start(void *data)
 {
 	ui_gadget_h ug = data;
 	struct ug_module_ops *ops = NULL;
 
-	if (!ug || ug->state != UG_STATE_CREATED
-	    || ug->state == UG_STATE_RUNNING)
-		return 0;
+	if (!ug) {
+		_ERR("ug is null");
+		return;
+	} else if (ug->state != UG_STATE_CREATED) {
+		_ERR("ug(%p) state(%d) is error", ug, ug->state);
+		return;
+	}
 
 	_DBG("ug=%p", ug);
 
@@ -184,7 +283,7 @@ static int ugman_ug_start(void *data)
 	if (ops && ops->start)
 		ops->start(ug, ug->service, ops->priv);
 
-	return 0;
+	return;
 }
 
 static int ugman_ug_pause(void *data)
@@ -284,6 +383,8 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 	int enable;
 	int cur_state;
 
+	_DBG("indicator update opt(%d)", opt);
+
 	switch (GET_OPT_INDICATOR_VAL(opt)) {
 	case UG_OPT_INDICATOR_ENABLE:
 		if (event == UG_EVENT_NONE)
@@ -347,6 +448,8 @@ static int ugman_ug_event(ui_gadget_h ug, enum ug_event event)
 	if (ug->module)
 		ops = &ug->module->ops;
 
+	_DBG("ug_event_cb : ug(%p) / event(%d)", ug, event);
+
 	if (ops && ops->event)
 		ops->event(ug, event, ug->service, ops->priv);
 
@@ -364,7 +467,7 @@ static int ugman_ug_destroy(void *data)
 	if (!ug)
 		goto end;
 
-	_DBG("ugman_ug_destroy start ug(%p)", ug);
+	_DBG("ugman_ug_destroy ug(%p) state(%d)", ug, ug->state);
 
 	switch (ug->state) {
 	case UG_STATE_CREATED:
@@ -383,6 +486,7 @@ static int ugman_ug_destroy(void *data)
 
 	if (ug->children) {
 		child = ug->children;
+		_DBG("ug_destroy ug(%p) has child(%p)", ug, child);
 		while (child) {
 			trail = g_slist_next(child);
 			ugman_ug_destroy(child->data);
@@ -391,7 +495,7 @@ static int ugman_ug_destroy(void *data)
 	}
 
 	if (ops && ops->destroy) {
-		_DBG("ug module destory cb call");
+		_DBG("ug(%p) module destory cb call", ug);
 		ops->destroy(ug, ug->service, ops->priv);
 	}
 
@@ -406,6 +510,7 @@ static int ugman_ug_destroy(void *data)
 		}
 	}
 
+	_DBG("free ug(%p)", ug);
 	ug_free(ug);
 
 	if (ug_man.root == ug)
@@ -418,9 +523,10 @@ static int ugman_ug_destroy(void *data)
 	return 0;
 }
 
-static void ug_hide_end_cb(ui_gadget_h ug)
+static void ug_hide_end_cb(void *data)
 {
-	ecore_idler_add(ugman_ug_destroy, ug);
+	ui_gadget_h ug = data;
+	ecore_idler_add((Ecore_Task_Cb)ugman_ug_destroy, ug);
 }
 
 static int ugman_ug_create(void *data)
@@ -430,8 +536,10 @@ static int ugman_ug_create(void *data)
 	struct ug_cbs *cbs;
 	struct ug_engine_ops *eng_ops = NULL;
 
-	if (!ug || ug->state != UG_STATE_READY)
+	if (!ug || ug->state != UG_STATE_READY) {
+		_ERR("ug(%p) input param error");
 		return -1;
+	}
 
 	ug->state = UG_STATE_CREATED;
 
@@ -445,6 +553,7 @@ static int ugman_ug_create(void *data)
 		ug->layout = ops->create(ug, ug->mode, ug->service, ops->priv);
 		if (!ug->layout) {
 			ug_relation_del(ug);
+			_ERR("ug(%p) layout is null", ug);
 			return -1;
 		}
 		if (ug->mode == UG_MODE_FULLVIEW) {
@@ -458,10 +567,16 @@ static int ugman_ug_create(void *data)
 		if (cbs && cbs->layout_cb)
 			cbs->layout_cb(ug, ug->mode, cbs->priv);
 
-		ugman_ug_getopt(ug);
+		_DBG("after caller layout cb call");
+		ugman_indicator_update(ug->opt, UG_EVENT_NONE);
 	}
 
-	ugman_ug_event(ug, ug_man.last_rotate_evt);
+	if(ug_man.last_rotate_evt == UG_EVENT_NONE) {
+		ugman_ug_event(ug,
+			__ug_x_rotation_get(ug_man.disp, ug_man.win_id));
+	} else {
+		ugman_ug_event(ug, ug_man.last_rotate_evt);
+	}
 
 	if(ug->mode == UG_MODE_FRAMEVIEW)
 		ugman_ug_start(ug);
@@ -474,20 +589,22 @@ static int ugman_ug_create(void *data)
 int ugman_ug_add(ui_gadget_h parent, ui_gadget_h ug)
 {
 	if (!ug_man.is_initted) {
-		_ERR("ugman_ug_add failed: manager is not initted");
+		_ERR("failed: manager is not initted");
 		return -1;
 	}
 
 	if (!ug_man.root) {
 		if (parent) {
-			_ERR("ugman_ug_add failed: parent has to be NULL w/o root");
+			_ERR("failed: parent has to be NULL w/o root");
 			errno = EINVAL;
 			return -1;
 		}
 
 		ug_man.root = ug_root_create();
-		if (!ug_man.root)
+		if (!ug_man.root) {
+			_ERR("failed : ug root create fail");
 			return -1;
+		}
 		ug_man.root->opt = ug_man.base_opt;
 		ug_man.root->layout = ug_man.win;
 		ug_fvlist_add(ug_man.root);
@@ -496,12 +613,15 @@ int ugman_ug_add(ui_gadget_h parent, ui_gadget_h ug)
 	if (!parent)
 		parent = ug_man.root;
 
-	if (ug_relation_add(parent, ug))
+	if (ug_relation_add(parent, ug)) {
+		_ERR("failed : ug_relation_add fail");
 		return -1;
+	}
 
-	if (ugman_ug_create(ug) == -1)
+	if (ugman_ug_create(ug) == -1) {
+		_ERR("failed : ugman_ug_create fail");
 		return -1;
-
+	}
 	if (ug->mode == UG_MODE_FULLVIEW)
 		ug_fvlist_add(ug);
 
@@ -608,9 +728,23 @@ int ugman_ug_del(ui_gadget_h ug)
 	ugman_ug_destroying(ug);
 
 	/* pre call for indicator update time issue */
+	bool is_update = false;
+	ui_gadget_h t = NULL;
 	if (ug_man.fv_top == ug) {
-		ui_gadget_h t;
+		is_update = true;
 		t = g_slist_nth_data(ug_man.fv_list, 1);
+	} else {
+		if (ug->children) {
+			GSList *child;
+			child = g_slist_last(ug->children);
+			if(ug_man.fv_top == (ui_gadget_h)child->data) {
+				is_update = true;
+				t = g_slist_nth_data(ug_man.fv_list,
+					g_slist_index(ug_man.fv_list,(gconstpointer)ug)+1);
+			}
+		}
+	}
+	if((is_update)&&(t)) {
 		ugman_ug_getopt(t);
 	}
 
@@ -624,7 +758,7 @@ int ugman_ug_del(ui_gadget_h ug)
 			eng_ops->destroy(ug, NULL, ug_hide_end_cb);
 		}
 	else
-		ecore_idler_add(ugman_ug_destroy, ug);
+		ecore_idler_add((Ecore_Task_Cb)ugman_ug_destroy, ug);
 
 	return 0;
 }
@@ -642,6 +776,8 @@ int ugman_ug_del_all(void)
 		return -1;
 	}
 
+	_DBG("ug_del_all. root(%p) walking(%d) ", ug_man.root, ug_man.walking);
+
 	if (ug_man.walking > 0)
 		ug_man.destroy_all = 1;
 	else
@@ -657,7 +793,7 @@ int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt)
 	ug_man.disp = disp;
 	ug_man.win_id = xid;
 	ug_man.base_opt = opt;
-	ug_man.last_rotate_evt = UG_EVENT_ROTATE_PORTRAIT;
+	ug_man.last_rotate_evt = UG_EVENT_NONE;
 	ug_man.engine = ug_engine_load();
 
 	return 0;
@@ -676,7 +812,9 @@ int ugman_resume(void)
 		return -1;
 	}
 
-	ecore_idler_add(ugman_ug_resume, ug_man.root);
+	_DBG("ugman_resume called");
+
+	ecore_idler_add((Ecore_Task_Cb)ugman_ug_resume, ug_man.root);
 
 	return 0;
 }
@@ -694,7 +832,9 @@ int ugman_pause(void)
 		return -1;
 	}
 
-	ecore_idler_add(ugman_ug_pause, ug_man.root);
+	_DBG("ugman_pause called");
+
+	ecore_idler_add((Ecore_Task_Cb)ugman_ug_pause, ug_man.root);
 
 	return 0;
 }
@@ -720,6 +860,11 @@ int ugman_send_event(enum ug_event event)
 		return -1;
 	}
 
+	if (!ug_man.root) {
+		_ERR("ugman_send_event failed: no root");
+		return -1;
+	}
+
 	/* In case of rotation, indicator state has to be updated */
 	switch (event) {
 	case UG_EVENT_ROTATE_PORTRAIT:
@@ -736,12 +881,7 @@ int ugman_send_event(enum ug_event event)
 		is_rotation = 0;
 	}
 
-	if (!ug_man.root) {
-		_ERR("ugman_send_event failed: no root");
-		return -1;
-	}
-
-	ecore_idler_add(ugman_send_event_pre, (void *)event);
+	ecore_idler_add((Ecore_Task_Cb)ugman_send_event_pre, (void *)event);
 
 	if (is_rotation && ug_man.fv_top)
 		ugman_indicator_update(ug_man.fv_top->opt, event);
