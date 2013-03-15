@@ -67,7 +67,6 @@ static int rotate(enum appcore_rm m, void *data)
 {
 	struct appdata *ad = data;
 	int r;
-	bool is_rotation_lock = false;
 
 	if (ad == NULL || ad->win == NULL)
 		return 0;
@@ -113,8 +112,10 @@ void _ug_client_layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
 	ad = priv;
 
 	base = ug_get_layout(ug);
-	if (!base)
+	if (!base) {
+		LOGE("base layout is null");
 		return;
+	}
 
 	switch (mode) {
 	case UG_MODE_FULLVIEW:
@@ -273,6 +274,8 @@ static int app_terminate(void *data)
 {
 	struct appdata *ad = data;
 
+	LOGD("app_terminate called");
+
 	ug_destroy_all();
 
 	if (ad->ly_main) {
@@ -291,6 +294,8 @@ static int app_terminate(void *data)
 static int app_pause(void *data)
 {
 	struct appdata *ad = data;
+
+	LOGD("app_pause called");
 
 	ug_pause();
 	if (!ad->is_transient) {

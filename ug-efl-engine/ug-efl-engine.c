@@ -33,85 +33,55 @@
 
 static Evas_Object *navi = NULL;
 static Evas_Object *conform = NULL;
-struct cb_data {
-	ui_gadget_h ug;
-	void (*transition_cb)(ui_gadget_h ug);
-};
-static void __hide_finished(void *data, Evas_Object *obj, void *event_info);
 static void on_show_cb(void *data, Evas *e, Evas_Object *obj, void *event_info);
+static void __hide_finished(void *data, Evas_Object *obj, void *event_info);
+static void (*show_end_cb)(void* data) = NULL;
+static void (*hide_end_cb)(void* data) = NULL;
 
-static void _on_hideonly_cb(void *data, Evas_Object *obj)
+
+static void __del_effect_top_layout(ui_gadget_h ug)
 {
-	ui_gadget_h ug = (ui_gadget_h)data;
-
-	if (!ug)
-		return;
-
-	_DBG("\t obj=%p ug=%p state=%d", obj, ug, ug->layout_state);
-
-	evas_object_intercept_hide_callback_del(ug->layout, _on_hideonly_cb);
-
-	struct cb_data *cb_d;
-	cb_d = (struct cb_data *)calloc(1, sizeof(struct cb_data));
-	cb_d->ug = ug;
-	cb_d->transition_cb = NULL;
-
-	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_SHOW, on_show_cb, cb_d);
-
-	if (ug->layout_state == UG_LAYOUT_NOEFFECT) {
-		;
-	}
-
-	if (ug->layout_state == UG_LAYOUT_SHOW) {
-		ug->layout_state = UG_LAYOUT_HIDEEFFECT;
-	}
-
-	if (GET_OPT_OVERLAP_VAL(ug->opt) == UG_OPT_OVERLAP_ENABLE) {
-		_DBG("\t this is Overlap UG. Send nooverlap sig on hide_cb");
-		elm_object_signal_emit(conform, "elm,state,indicator,nooverlap", "");
-	}
-
-	if (elm_naviframe_top_item_get(navi) == ug->effect_layout) {
-		elm_naviframe_item_pop(navi);
-	} else {
-		elm_object_item_del(ug->effect_layout);
-		ug->effect_layout = NULL;
-	}
+	_DBG("\t cb transition add ug=%p", ug);
+	evas_object_smart_callback_add(navi, "transition,finished",
+				__hide_finished, ug);
+	elm_naviframe_item_pop(navi);
+	ug->effect_layout = NULL;
+	ug->layout_state = UG_LAYOUT_HIDEEFFECT;
 }
 
-static void _del_effect_layout(ui_gadget_h ug)
+static Eina_Bool __destroy_end_cb(void *data)
 {
-	GSList *child, *trail;
+	GSList *child;
+	ui_gadget_h ug = (ui_gadget_h)data;
 
-	if (!ug)
-		return;
-
-	_DBG("\t ug=%p state=%d", ug, ug->layout_state);
-
-	evas_object_intercept_hide_callback_del(ug->layout, _on_hideonly_cb);
+	_DBG("\t __destroy_end_cb ug=%p", ug);
 
 	if (ug->children) {
 		child = ug->children;
+		//_DBG("\t ug(%p) has children(%p)", ug, child);
 		while (child) {
-			trail = g_slist_next(child);
-			_del_effect_layout(child->data);
-			child = trail;
+			if(!child->data) {
+				_ERR("child->data is null");
+				return ECORE_CALLBACK_CANCEL;
+			}
+
+			//_DBG("\t child(%p) layout_state(%d)", child, ((ui_gadget_h)child->data)->layout_state);
+
+			if( ((ui_gadget_h)child->data)->layout_state == UG_LAYOUT_HIDEEFFECT) {
+				//_DBG("\t wait hideeffect child(%p)", ug);
+				return ECORE_CALLBACK_RENEW;
+			}
+			child = g_slist_next(child);
 		}
 	}
 
-	/* effect_layout of frameview is null */
-	/* remove navi item */
-	if (ug->effect_layout) {
-		_DBG("\t remove navi item: ug=%p", ug);
-		if (ug->layout_state == UG_LAYOUT_HIDEEFFECT) {
-			_DBG("\t del cb, ug=%p", ug);
-			evas_object_smart_callback_del(navi, "transition,finished",
-							__hide_finished);
-		}
-		elm_object_item_del(ug->effect_layout);
-		ug->effect_layout = NULL;
-	}
+	hide_end_cb(ug);
+	return ECORE_CALLBACK_CANCEL;
+}
 
+
+static void __del_effect_end(ui_gadget_h ug)
+{
 	if (navi) {
 		Elm_Object_Item *t = elm_naviframe_top_item_get(navi);
 		Elm_Object_Item *b = elm_naviframe_bottom_item_get(navi);
@@ -122,124 +92,165 @@ static void _del_effect_layout(ui_gadget_h ug)
 		}
 	}
 	evas_object_hide(ug->layout);
+
+	ecore_idler_add((Ecore_Task_Cb)__destroy_end_cb, (void *)ug);
+
+	ug->layout_state = UG_LAYOUT_DESTROY;
+}
+
+static void __del_effect_layout(ui_gadget_h ug, ui_gadget_h t_ug)
+{
+	GSList *child;
+
+	if (!ug)
+		return;
+
+	_DBG("\t ug=%p state=%d , t_ug=%p", ug, ug->layout_state, t_ug);
+
+	if (ug->children) {
+		child = ug->children;
+		_DBG("\t ug(%p) has children(%p)", ug, child);
+		while (child) {
+			__del_effect_layout(child->data, t_ug);
+			child = g_slist_next(child);
+		}
+	}
+
+	if((ug == t_ug)&&(ug->layout_state != UG_LAYOUT_NOEFFECT)){
+		if (ug->layout_state != UG_LAYOUT_HIDEEFFECT) {
+			__del_effect_top_layout(ug);
+		} else {
+			_ERR("\t top ug(%p) state is hideeffect.");
+			return;
+		}
+	} else {
+		_DBG("\t remove navi item: ug=%p state=%d", ug, ug->layout_state);
+		elm_object_item_del(ug->effect_layout);
+		ug->effect_layout = NULL;
+	}
+
+	__del_effect_end(ug);
 }
 
 static void __hide_finished(void *data, Evas_Object *obj, void *event_info)
 {
-	struct cb_data *cb_d = (struct cb_data *)data;
-
-	if (!cb_d)
+	ui_gadget_h ug = (ui_gadget_h)data;
+	if (!ug)
 		return;
+
+	_DBG("\t obj=%p ug=%p", obj, ug);
 
 	evas_object_smart_callback_del(obj, "transition,finished",
 					__hide_finished);
 
-	ui_gadget_h ug = cb_d->ug;
-	_DBG("\t obj=%p ug=%p state=%d", obj, ug, ug->layout_state);
-
-	ug->effect_layout = NULL;
-	_del_effect_layout(ug);
-	cb_d->transition_cb(ug);
-	free(cb_d);
+	if(ug->layout_state == UG_LAYOUT_HIDEEFFECT)
+		__del_effect_end(ug);
+	else
+		_ERR("wrong ug(%p) state(%d)", ug, ug->layout_state);
 }
 
-static int __find_child(ui_gadget_h p, ui_gadget_h ug)
+static void __on_hideonly_cb(void *data, Evas_Object *obj)
 {
-	GSList *child = NULL;
+	ui_gadget_h ug = (ui_gadget_h)data;
 
-	if (!p || !ug)
-		return 0;
-	child = p->children;
+	if (!ug)
+		return;
 
-	while (child) {
-		if (child->data == ug)
-			return 1;
-		if (__find_child(child->data, ug))
-			return 1;
-		child = g_slist_next(child);
+	_DBG("\t obj=%p ug=%p state=%d", obj, ug, ug->layout_state);
+
+	evas_object_intercept_hide_callback_del(ug->layout, __on_hideonly_cb);
+
+	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_SHOW, on_show_cb, ug);
+
+	if (ug->layout_state == UG_LAYOUT_SHOW) {
+		ug->layout_state = UG_LAYOUT_HIDE;
+	} else if (ug->layout_state == UG_LAYOUT_NOEFFECT) {
+		;
+	} else {
+		_ERR("wrong ug(%p) state(%d)", ug, ug->layout_state);
+		return;
 	}
 
-	return 0;
+	if (elm_naviframe_top_item_get(navi) == ug->effect_layout) {
+		elm_naviframe_item_pop(navi);
+	} else {
+		elm_object_item_del(ug->effect_layout);
+	}
+
+	ug->effect_layout = NULL;
 }
 
 static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
-		       void (*hide_end_cb) (ui_gadget_h ug))
+		       void (*hide_cb)(void* data))
 {
 	if (!ug)
 		return;
 	_DBG("\t ug=%p tug=%p state=%d", ug, t_ug, ug->layout_state);
 
 	evas_object_intercept_hide_callback_del(ug->layout,
-						_on_hideonly_cb);
+						__on_hideonly_cb);
+
+	if(!hide_end_cb)
+		hide_end_cb = hide_cb;
 
 	if (ug != t_ug) {
 		_DBG("requested ug(%p) is not top ug(%p)", ug, t_ug);
-		_del_effect_layout(ug);
-		hide_end_cb(ug);
+		__del_effect_layout(ug, t_ug);
 		return;
 	}
 
-	if (ug->layout_state == UG_LAYOUT_SHOW) {
-		struct cb_data *cb_d;
-		cb_d = (struct cb_data *)calloc(1, sizeof(struct cb_data));
-		cb_d->ug = ug;
-		cb_d->transition_cb = hide_end_cb;
-
-		_DBG("\t cb add ug=%p", ug);
-
-		/* overlap update does not needed because manager will do that at on_destroy scenario */
-
-		evas_object_smart_callback_add(navi, "transition,finished",
-					__hide_finished, cb_d);
-		elm_naviframe_item_pop(navi);
-		ug->layout_state = UG_LAYOUT_HIDEEFFECT;
+	if(ug->layout_state == UG_LAYOUT_SHOW) {
+		__del_effect_top_layout(ug);
 	} else if (ug->layout_state == UG_LAYOUT_HIDE
-		   || ug->layout_state == UG_LAYOUT_NOEFFECT) {
-		_del_effect_layout(ug);
-		hide_end_cb(ug);
-	} else if (ug->layout_state == UG_LAYOUT_HIDEEFFECT
-		   || ug->layout_state == UG_LAYOUT_SHOWEFFECT) {
-		ug->layout_state = UG_LAYOUT_DESTROY;
+		|| ug->layout_state == UG_LAYOUT_NOEFFECT
+		|| ug->layout_state == UG_LAYOUT_SHOWEFFECT) {
+		__del_effect_layout(ug, t_ug);
+	} else if (ug->layout_state == UG_LAYOUT_HIDEEFFECT) {
+		;
 	} else {
 		_ERR("[UG Effect Plug-in] : layout state error!!");
 	}
 }
 
+static void __update_indicator_overlap(int opt)
+{
+	if (GET_OPT_OVERLAP_VAL(opt)) {
+		_DBG("\t this is Overlap UG. Send overlap sig on_show_cb");
+		elm_object_signal_emit(conform, "elm,state,indicator,overlap", "");
+	}  else {
+		_DBG("\t this is no overlap UG. Send no overlap sig on_show_cb");
+		elm_object_signal_emit(conform, "elm,state,indicator,nooverlap", "");
+	}
+}
+
 static void __show_finished(void *data, Evas_Object *obj, void *event_info)
 {
-	struct cb_data *cb_d = (struct cb_data *)data;
-	if (!cb_d)
-		return;
-
-	ui_gadget_h ug = cb_d->ug;
+	ui_gadget_h ug = (ui_gadget_h)data;
 	if (!ug)
 		return;
 
-	_DBG("\tobj=%p ug=%p state=%d", obj, ug, ug->layout_state);
+	_DBG("\tobj=%p ug=%p", obj, ug);
 
 	evas_object_smart_callback_del(obj, "transition,finished",
 					__show_finished);
 
-	if (ug->layout_state == UG_LAYOUT_NOEFFECT)
-		return;
-
-	if (ug->layout_state == UG_LAYOUT_DESTROY)
-		;
-	else
+	if (ug->layout_state == UG_LAYOUT_DESTROY) {
+		_DBG("ug(%p) already destroyed", ug);
+	} else if (ug->layout_state == UG_LAYOUT_SHOWEFFECT) {
 		ug->layout_state = UG_LAYOUT_SHOW;
+		if(show_end_cb)
+			show_end_cb(ug);
+	} else {
+		_ERR("wrong state(%d)", ug->layout_state);
+	}
 
-	if(cb_d->transition_cb)
-		cb_d->transition_cb(ug);
-	free(cb_d);
+	return;
 }
 
 static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 		       void *event_info)
 {
-	struct cb_data *cb_d = (struct cb_data *)data;
-	if (!cb_d)
-		return;
-	ui_gadget_h ug = cb_d->ug;
+	ui_gadget_h ug = (ui_gadget_h)data;
 	if (!ug)
 		return;
 	_DBG("\tobj=%p ug=%p layout=%p state=%d", obj, ug, ug->layout, ug->layout_state);
@@ -247,48 +258,42 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 	evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_SHOW, on_show_cb);
 
 	evas_object_intercept_hide_callback_add(ug->layout,
-						_on_hideonly_cb, ug);
+						__on_hideonly_cb, ug);
 
+	//if 'elm.swallow.ug' string is changed, msg team have to apply this changes.
 	elm_object_part_content_set(conform, "elm.swallow.ug", navi);
 
-	if (ug->layout_state == UG_LAYOUT_HIDE
+	if (ug->layout_state == UG_LAYOUT_HIDEEFFECT
 	    || ug->layout_state == UG_LAYOUT_INIT) {
 		_DBG("\t UG_LAYOUT_Init(%d) obj=%p", ug->layout_state, obj);
 		ug->layout_state = UG_LAYOUT_SHOWEFFECT;
 
-		if (GET_OPT_OVERLAP_VAL(ug->opt)) {
-			_DBG("\t this is Overlap UG. Send overlap sig on_show_cb");
-			elm_object_signal_emit(conform, "elm,state,indicator,overlap", "");
-		}
+		__update_indicator_overlap(ug->opt);
 
 		evas_object_smart_callback_add(navi, "transition,finished",
-						__show_finished, cb_d);
+						__show_finished, ug);
 		ug->effect_layout = elm_naviframe_item_push(navi, NULL, NULL, NULL,
 						    ug->layout, NULL);
 	} else if (ug->layout_state == UG_LAYOUT_NOEFFECT) {
 		_DBG("\t UG_LAYOUT_NOEFFECT obj=%p", obj);
 
-		if (GET_OPT_OVERLAP_VAL(ug->opt)) {
-			_DBG("\t this is Overlap UG. Send overlap sig on_show_cb");
-			elm_object_signal_emit(conform, "elm,state,indicator,overlap", "");
-		}
+		__update_indicator_overlap(ug->opt);
 
 		Elm_Object_Item *navi_top = elm_naviframe_top_item_get(navi);
 		ug->effect_layout = elm_naviframe_item_insert_after(navi,
 				navi_top, NULL, NULL, NULL, ug->layout, NULL);
-
 		//ug start cb
-		if(cb_d->transition_cb)
-			cb_d->transition_cb(ug);
-		free(cb_d);
+		if(show_end_cb)
+			show_end_cb(ug);
 	} else {
 		_ERR("\tlayout state error!! state=%d\n", ug->layout_state);
-		free(cb_d);
 	}
+
+	_DBG("\ton_show_cb end ug=%p", ug);
 }
 
 static void *on_create(void *win, ui_gadget_h ug,
-					void (*show_end_cb) (void* data))
+					void (*show_cb)(void* data))
 {
 	Evas_Object *navi_bg;
 	Evas_Object *con = NULL;
@@ -319,13 +324,11 @@ static void *on_create(void *win, ui_gadget_h ug,
 		elm_naviframe_item_push(navi, NULL, NULL, NULL, navi_bg, NULL);
 	}
 
-	struct cb_data *cb_d;
-	cb_d = (struct cb_data *)calloc(1, sizeof(struct cb_data));
-	cb_d->ug = ug;
-	cb_d->transition_cb = show_end_cb;
+	if(!show_end_cb)
+		show_end_cb = show_cb;
 
 	evas_object_hide(ug->layout);
-	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_SHOW, on_show_cb, cb_d);
+	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_SHOW, on_show_cb, ug);
 
 	ug->layout_state = UG_LAYOUT_INIT;
 
