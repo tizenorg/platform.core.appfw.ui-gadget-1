@@ -396,8 +396,6 @@ int main(int argc, char *argv[])
 	};
 	int cmdlen = 0;
 
-	setenv("ELM_ENGINE", "gl", 1); //enabling the OpenGL as the backend of the EFL.
-
 	memset(&ad, 0x0, sizeof(struct appdata));
 	ops.data = &ad;
 
