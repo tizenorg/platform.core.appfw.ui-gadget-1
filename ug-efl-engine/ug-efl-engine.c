@@ -38,6 +38,19 @@ static void __hide_finished(void *data, Evas_Object *obj, void *event_info);
 static void (*show_end_cb)(void* data) = NULL;
 static void (*hide_end_cb)(void* data) = NULL;
 
+static void _layout_del_cb(void *data, Evas_Object *obj, void *event_info)
+{
+	ui_gadget_h ug = (ui_gadget_h)data;
+	if (!ug)
+		return;
+
+	_WRN("ug(%p) layout is deleted by abnormal path", ug);
+
+	evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_DEL, _layout_del_cb);
+
+	ug->layout_state = UG_LAYOUT_DESTROY;
+	ug->layout = NULL;
+}
 
 static void __del_effect_top_layout(ui_gadget_h ug)
 {
@@ -91,7 +104,10 @@ static void __del_effect_end(ui_gadget_h ug)
 			navi = NULL;
 		}
 	}
-	evas_object_hide(ug->layout);
+	if (ug->layout) {
+		evas_object_hide(ug->layout);
+		evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_DEL, _layout_del_cb);
+	}
 
 	ecore_idler_add((Ecore_Task_Cb)__destroy_end_cb, (void *)ug);
 
@@ -156,10 +172,9 @@ static void __on_hideonly_cb(void *data, Evas_Object *obj)
 	if (!ug)
 		return;
 
-	_DBG("\t obj=%p ug=%p state=%d", obj, ug, ug->layout_state);
+	_DBG("\t obj=%p ug=%p layout_state=%d state=%d", obj, ug, ug->layout_state, ug->state);
 
 	evas_object_intercept_hide_callback_del(ug->layout, __on_hideonly_cb);
-
 	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_SHOW, on_show_cb, ug);
 
 	if (ug->layout_state == UG_LAYOUT_SHOW) {
@@ -189,6 +204,12 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 
 	evas_object_intercept_hide_callback_del(ug->layout,
 						__on_hideonly_cb);
+
+	if(hide_cb == NULL) {
+		/* ug_destroy_all case */
+		evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_DEL, _layout_del_cb);
+		return;
+	}
 
 	if(!hide_end_cb)
 		hide_end_cb = hide_cb;
@@ -259,6 +280,7 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 
 	evas_object_intercept_hide_callback_add(ug->layout,
 						__on_hideonly_cb, ug);
+	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_DEL, _layout_del_cb, ug);
 
 	//if 'elm.swallow.ug' string is changed, msg team have to apply this changes.
 	elm_object_part_content_set(conform, "elm.swallow.ug", navi);

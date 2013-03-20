@@ -57,7 +57,6 @@ struct ug_module *ug_module_load(const char *name)
 	int (*module_init) (struct ug_module_ops *ops);
 
 	module = calloc(1, sizeof(struct ug_module));
-
 	if (!module) {
 		errno = ENOMEM;
 		return NULL;
@@ -103,6 +102,7 @@ struct ug_module *ug_module_load(const char *name)
 		goto module_dlclose;
 
 	module->handle = handle;
+	module->module_name = strdup(name);
 	return module;
 
  module_dlclose:
@@ -132,6 +132,9 @@ int ug_module_unload(struct ug_module *module)
 		dlclose(module->handle);
 		module->handle = NULL;
 	}
+
+	if(module->module_name)
+		free(module->module_name);
 
 	free(module);
 	return 0;

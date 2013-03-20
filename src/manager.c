@@ -28,7 +28,6 @@
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
 
-#include <Elementary.h>
 #include <Ecore.h>
 
 #include "ug.h"
@@ -383,16 +382,16 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 	int enable;
 	int cur_state;
 
-	_DBG("indicator update opt(%d)", opt);
+	cur_state = utilx_get_indicator_state(ug_man.disp, ug_man.win_id);
+
+	_DBG("indicator update opt(%d) cur_state(%d)", opt, cur_state);
 
 	switch (GET_OPT_INDICATOR_VAL(opt)) {
 	case UG_OPT_INDICATOR_ENABLE:
 		if (event == UG_EVENT_NONE)
 			enable = 1;
-		else {
-			cur_state = utilx_get_indicator_state(ug_man.disp, ug_man.win_id);
+		else
 			enable = cur_state ? 1 : 0;
-		}
 		break;
 	case UG_OPT_INDICATOR_PORTRAIT_ONLY:
 		enable = ug_man.is_landscape ? 0 : 1;
@@ -410,8 +409,9 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 		return -1;
 	}
 
-	utilx_enable_indicator(ug_man.disp, ug_man.win_id, enable);
-
+	if(cur_state != enable) {
+		utilx_enable_indicator(ug_man.disp, ug_man.win_id, enable);
+	}
 	return 0;
 }
 
@@ -481,12 +481,9 @@ static int ugman_ug_destroy(void *data)
 
 	ug->state = UG_STATE_DESTROYED;
 
-	if (ug->module)
-		ops = &ug->module->ops;
-
 	if (ug->children) {
 		child = ug->children;
-		_DBG("ug_destroy ug(%p) has child(%p)", ug, child);
+		_DBG("ug_destroy ug(%p) has child(%p)", ug, child->data);
 		while (child) {
 			trail = g_slist_next(child);
 			ugman_ug_destroy(child->data);
@@ -494,12 +491,28 @@ static int ugman_ug_destroy(void *data)
 		}
 	}
 
+	if((ug != ug_man.root) && (ug->layout) &&
+		(ug->layout_state != UG_LAYOUT_DESTROY)) {
+		/* ug_destroy_all case */
+		struct ug_engine_ops *eng_ops = NULL;
+
+		if (ug_man.engine)
+			eng_ops = &ug_man.engine->ops;
+
+		if (eng_ops && eng_ops->destroy)
+			eng_ops->destroy(ug, NULL, NULL);
+	}
+
+	if (ug->module)
+		ops = &ug->module->ops;
+
 	if (ops && ops->destroy) {
 		_DBG("ug(%p) module destory cb call", ug);
 		ops->destroy(ug, ug->service, ops->priv);
 	}
 
-	ug_relation_del(ug);
+	if (ug != ug_man.root)
+		ug_relation_del(ug);
 
 	if (ug->mode == UG_MODE_FULLVIEW) {
 		if (ug_man.fv_top == ug) {
@@ -572,11 +585,9 @@ static int ugman_ug_create(void *data)
 	}
 
 	if(ug_man.last_rotate_evt == UG_EVENT_NONE) {
-		ugman_ug_event(ug,
-			__ug_x_rotation_get(ug_man.disp, ug_man.win_id));
-	} else {
-		ugman_ug_event(ug, ug_man.last_rotate_evt);
+		ug_man.last_rotate_evt = __ug_x_rotation_get(ug_man.disp, ug_man.win_id);
 	}
+	ugman_ug_event(ug, ug_man.last_rotate_evt);
 
 	if(ug->mode == UG_MODE_FRAMEVIEW)
 		ugman_ug_start(ug);
@@ -703,7 +714,7 @@ int ugman_ug_del(ui_gadget_h ug)
 	struct ug_engine_ops *eng_ops = NULL;
 
 	if (!ug || !ugman_ug_exist(ug) || ug->state == UG_STATE_DESTROYED) {
-		_ERR("ugman_ug_del failed: Invalid ug");
+		_ERR("ugman_ug_del failed: Invalid ug(%p)");
 		errno = EINVAL;
 		return -1;
 	}
@@ -808,7 +819,7 @@ int ugman_resume(void)
 	}
 
 	if (!ug_man.root) {
-		_ERR("ugman_resume failed: no root");
+		_WRN("ugman_resume failed: no root");
 		return -1;
 	}
 
@@ -861,7 +872,7 @@ int ugman_send_event(enum ug_event event)
 	}
 
 	if (!ug_man.root) {
-		_ERR("ugman_send_event failed: no root");
+		_WRN("ugman_send_event failed: no root");
 		return -1;
 	}
 
