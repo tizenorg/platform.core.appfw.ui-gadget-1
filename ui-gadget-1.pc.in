@@ -1,7 +1,7 @@
 prefix=@PREFIX@
 exec_prefix=@EXEC_PREFIX@
-libdir=@LIBDIR@
-includedir=@INCLUDEDIR@/ug-1/
+libdir=@LIB_INSTALL_DIR@
+includedir=@INCLUDE_INSTALL_DIR@/ug-1/
 
 Name: UI Gadget
 Description: UI Gadget Library

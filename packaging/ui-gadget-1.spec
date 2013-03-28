@@ -35,7 +35,7 @@ Development files for %{name}
 %setup -q
 
 %build
-cmake . -DCMAKE_INSTALL_PREFIX=/usr
+%cmake .
 
 make %{?jobs:-j%jobs}
 
