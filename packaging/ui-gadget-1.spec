@@ -1,7 +1,7 @@
 
 Name:       ui-gadget-1
 Summary:    UI Gadget Library
-Version:    0.1.18
+Version:    0.1.19
 Release:    1
 Group:      System/Libraries
 License:    Apache License, Version 2.0

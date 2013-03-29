@@ -31,6 +31,8 @@
 
 #include "ug-client.h"
 
+#include <Ecore_X.h>
+
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif
@@ -63,42 +65,52 @@ static void main_quit_cb(void *data, Evas_Object *obj,
 	elm_exit();
 }
 
-static int rotate(enum appcore_rm m, void *data)
+static int ug_send_rotate_event(int angle)
 {
-	struct appdata *ad = data;
-	int r;
-
-	if (ad == NULL || ad->win == NULL)
-		return 0;
-
-	switch (m) {
-		case APPCORE_RM_PORTRAIT_NORMAL:
-			ug_send_event(UG_EVENT_ROTATE_PORTRAIT);
-			r = 0;
+	int ret = -1;
+	LOGD("ug_send_rotate_event angle : %d", angle);
+	switch(angle) {
+		case 0 :
+			ret = ug_send_event(UG_EVENT_ROTATE_PORTRAIT);
 			break;
-		case APPCORE_RM_PORTRAIT_REVERSE:
-			r = 180;
-			ug_send_event(UG_EVENT_ROTATE_PORTRAIT_UPSIDEDOWN);
+		case 90 :
+			ret = ug_send_event(UG_EVENT_ROTATE_LANDSCAPE_UPSIDEDOWN);
 			break;
-		case APPCORE_RM_LANDSCAPE_NORMAL:
-			ug_send_event(UG_EVENT_ROTATE_LANDSCAPE);
-			r = 270;
+		case 180 :
+			ret = ug_send_event(UG_EVENT_ROTATE_PORTRAIT_UPSIDEDOWN);
 			break;
-		case APPCORE_RM_LANDSCAPE_REVERSE:
-			ug_send_event(UG_EVENT_ROTATE_LANDSCAPE_UPSIDEDOWN);
-			r = 90;
+		case 270 :
+			ret = ug_send_event(UG_EVENT_ROTATE_LANDSCAPE);
 			break;
-		default:
-			r = -1;
+		default :
+			LOGW("wrong angle(%d) for send rotate event",angle);
 			break;
 	}
 
-	LOGE("rotate cb / rm : %d , r : %d", m, r);
+	return ret;
+}
 
-	if(r >= 0)
-		elm_win_rotation_with_resize_set(ad->win, r);
+static void rotate(void *data, Evas_Object *obj, void *event)
+{
+	int changed_angle = 0;
+	struct appdata *ad = data;
 
-	return 0;
+	changed_angle = elm_win_rotation_get((const Evas_Object *)obj);
+	if(changed_angle == -1) {
+		LOGE("elm_win_rotation_get error");
+		return;
+	}
+
+	LOGD("rotate call back : changed angle(%d) / current angle(%d)",
+		changed_angle, ad->rotate);
+
+	if(ad->rotate != changed_angle) {
+		ug_send_rotate_event(changed_angle);
+	}
+
+	ad->rotate = changed_angle;
+
+	return;
 }
 
 void _ug_client_layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
@@ -259,10 +271,24 @@ static int app_create(void *data)
 	elm_win_indicator_mode_set(win, ELM_WIN_INDICATOR_SHOW);
 	lang_changed(ad);
 
-	if (appcore_get_rotation_state(&rm) == 0)
-		rotate(rm, ad);
+	/* rotate notice */
+	int angle = -1;
+	angle = elm_win_rotation_get((const Evas_Object *)win);
+	LOGE("rotate : %d", angle);
+	if(angle != -1) {
+		ug_send_rotate_event(angle);
+		ad->rotate = angle;
+	} else {
+		LOGE("elm win rotation get error");
+	}
+	if(elm_win_wm_rotation_supported_get(win)) {
+		int rots[4] = { 0, 90, 180, 270 };
+		elm_win_wm_rotation_available_rotations_set(win, (const int*)&rots, 4);
+	} else {
+		LOGW("wm rotation supported get error");
+	}
+	evas_object_smart_callback_add(win, "wm,rotation,changed", rotate, data);
 
-	appcore_set_rotation_cb(rotate, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LOW_MEMORY, low_memory, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LOW_BATTERY, low_battery, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LANG_CHANGE, lang_changed, ad);
