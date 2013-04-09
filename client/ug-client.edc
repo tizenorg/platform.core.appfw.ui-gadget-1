@@ -22,7 +22,6 @@
 collections {
 	group {
 		name: "main";
-
 		parts {
 			part { name: "background";
 				type: RECT;
@@ -34,7 +33,6 @@ collections {
 					color: 0 0 0 255;
 				}
 			}
-
 			part { name: "content";
 				type: SWALLOW;
 				description {

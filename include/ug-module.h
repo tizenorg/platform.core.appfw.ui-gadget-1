@@ -26,11 +26,12 @@
 
 struct ug_module {
 	void *handle;
-	const char *module_name;
+	char *module_name;
 	struct ug_module_ops ops;
 };
 
 struct ug_module *ug_module_load(const char *name);
 int ug_module_unload(struct ug_module *module);
+int ug_exist(const char* name);
 
 #endif				/* __UG_MODULE_H__ */

@@ -302,6 +302,8 @@ static int app_terminate(void *data)
 
 	LOGD("app_terminate called");
 
+	evas_object_smart_callback_del(ad->win, "wm,rotation,changed", rotate);
+
 	ug_destroy_all();
 
 	if (ad->ly_main) {

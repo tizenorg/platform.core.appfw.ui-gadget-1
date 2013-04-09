@@ -148,8 +148,11 @@ struct ug_cbs {
 	void (*result_cb) (ui_gadget_h ug, service_h result, void *priv);
 	/** destroy callback */
 	void (*destroy_cb) (ui_gadget_h ug, void *priv);
+	/** end callback */
+	void (*end_cb) (ui_gadget_h ug, void *priv);
 	/** private data */
 	void *priv;
+	void *reserved[3];
 };
 
 /**
@@ -740,6 +743,39 @@ int ug_send_message(ui_gadget_h ug, service_h msg);
  * \endcode
  */
 int ug_disable_effect(ui_gadget_h ug);
+
+/**
+ * \par Description:
+ * This function check whether given ug is installed or not
+ *
+ * \par Purpose:
+ * This function is used for checking whether given ug is installed or not
+ *
+ * \par Typical use case:
+ * Anyone who want to know whether given ug is installed or not
+ *
+ * \par Method of function operation:
+ * This function returns value that ug is installed or not.
+ *
+ * \par Context of function:
+ * N/A
+ *
+ * @param[in] ug The UI gadget
+ * @return 1 - installed, 0 - installed, -1 - error
+ *
+ * \pre None
+ * \post None
+ * \see None
+ * \remarks None
+ *
+ * \par Sample code:
+ * \code
+ * #include <ui-gadget.h>
+ * ...
+ * ret = ug_is_installed(ug);
+ * ...
+ */
+int ug_is_installed(const char *name);
 
 #ifdef __cplusplus
 }

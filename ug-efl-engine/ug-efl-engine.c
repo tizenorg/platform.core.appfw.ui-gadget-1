@@ -34,7 +34,6 @@
 static Evas_Object *navi = NULL;
 static Evas_Object *conform = NULL;
 static void on_show_cb(void *data, Evas *e, Evas_Object *obj, void *event_info);
-static void __hide_finished(void *data, Evas_Object *obj, void *event_info);
 static void (*show_end_cb)(void* data) = NULL;
 static void (*hide_end_cb)(void* data) = NULL;
 
@@ -50,16 +49,6 @@ static void _layout_del_cb(void *data, Evas_Object *obj, void *event_info)
 
 	ug->layout_state = UG_LAYOUT_DESTROY;
 	ug->layout = NULL;
-}
-
-static void __del_effect_top_layout(ui_gadget_h ug)
-{
-	_DBG("\t cb transition add ug=%p", ug);
-	evas_object_smart_callback_add(navi, "transition,finished",
-				__hide_finished, ug);
-	elm_naviframe_item_pop(navi);
-	ug->effect_layout = NULL;
-	ug->layout_state = UG_LAYOUT_HIDEEFFECT;
 }
 
 static Eina_Bool __destroy_end_cb(void *data)
@@ -92,16 +81,15 @@ static Eina_Bool __destroy_end_cb(void *data)
 	return ECORE_CALLBACK_CANCEL;
 }
 
-
 static void __del_effect_end(ui_gadget_h ug)
 {
 	if (navi) {
 		Elm_Object_Item *t = elm_naviframe_top_item_get(navi);
 		Elm_Object_Item *b = elm_naviframe_bottom_item_get(navi);
 		if (t == b) {
-			_DBG("\t remove navi");
-			evas_object_del(navi);
-			navi = NULL;
+			_DBG("\t unset navi");
+			elm_object_part_content_unset(conform, "elm.swallow.ug");
+			evas_object_hide(navi);
 		}
 	}
 	if (ug->layout) {
@@ -112,6 +100,33 @@ static void __del_effect_end(ui_gadget_h ug)
 	ecore_idler_add((Ecore_Task_Cb)__destroy_end_cb, (void *)ug);
 
 	ug->layout_state = UG_LAYOUT_DESTROY;
+}
+
+static void __del_finished(void *data, Evas_Object *obj, void *event_info)
+{
+	ui_gadget_h ug = (ui_gadget_h)data;
+	if (!ug)
+		return;
+
+	_DBG("\t obj=%p ug=%p", obj, ug);
+
+	evas_object_smart_callback_del(obj, "transition,finished",
+					__del_finished);
+
+	if(ug->layout_state == UG_LAYOUT_HIDEEFFECT)
+		__del_effect_end(ug);
+	else
+		_ERR("wrong ug(%p) state(%d)", ug, ug->layout_state);
+}
+
+static void __del_effect_top_layout(ui_gadget_h ug)
+{
+	_DBG("\t cb transition add ug=%p", ug);
+	evas_object_smart_callback_add(navi, "transition,finished",
+				__del_finished, ug);
+	elm_naviframe_item_pop(navi);
+	ug->effect_layout = NULL;
+	ug->layout_state = UG_LAYOUT_HIDEEFFECT;
 }
 
 static void __del_effect_layout(ui_gadget_h ug, ui_gadget_h t_ug)
@@ -148,6 +163,25 @@ static void __del_effect_layout(ui_gadget_h ug, ui_gadget_h t_ug)
 	__del_effect_end(ug);
 }
 
+static void __hide_effect_end(ui_gadget_h ug)
+{
+	if (navi) {
+		Elm_Object_Item *t = elm_naviframe_top_item_get(navi);
+		Elm_Object_Item *b = elm_naviframe_bottom_item_get(navi);
+		if (t == b) {
+			_DBG("\t unset navi");
+			elm_object_part_content_unset(conform, "elm.swallow.ug");
+			evas_object_hide(navi);
+		}
+	}
+
+	if (ug->layout) {
+		evas_object_hide(ug->layout);
+	}
+
+	ug->layout_state = UG_LAYOUT_HIDE;
+}
+
 static void __hide_finished(void *data, Evas_Object *obj, void *event_info)
 {
 	ui_gadget_h ug = (ui_gadget_h)data;
@@ -160,7 +194,7 @@ static void __hide_finished(void *data, Evas_Object *obj, void *event_info)
 					__hide_finished);
 
 	if(ug->layout_state == UG_LAYOUT_HIDEEFFECT)
-		__del_effect_end(ug);
+		__hide_effect_end(ug);
 	else
 		_ERR("wrong ug(%p) state(%d)", ug, ug->layout_state);
 }
@@ -187,9 +221,14 @@ static void __on_hideonly_cb(void *data, Evas_Object *obj)
 	}
 
 	if (elm_naviframe_top_item_get(navi) == ug->effect_layout) {
+		_DBG("\t cb transition add ug=%p", ug);
+		evas_object_smart_callback_add(navi, "transition,finished",
+				__hide_finished, ug);
 		elm_naviframe_item_pop(navi);
+		ug->layout_state = UG_LAYOUT_HIDEEFFECT;
 	} else {
 		elm_object_item_del(ug->effect_layout);
+		__hide_effect_end(ug);
 	}
 
 	ug->effect_layout = NULL;
@@ -259,7 +298,7 @@ static void __show_finished(void *data, Evas_Object *obj, void *event_info)
 		_DBG("ug(%p) already destroyed", ug);
 	} else if (ug->layout_state == UG_LAYOUT_SHOWEFFECT) {
 		ug->layout_state = UG_LAYOUT_SHOW;
-		if(show_end_cb)
+		if((show_end_cb)&&(ug->state == UG_STATE_CREATED))
 			show_end_cb(ug);
 	} else {
 		_ERR("wrong state(%d)", ug->layout_state);
@@ -280,12 +319,12 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 
 	evas_object_intercept_hide_callback_add(ug->layout,
 						__on_hideonly_cb, ug);
-	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_DEL, _layout_del_cb, ug);
 
 	//if 'elm.swallow.ug' string is changed, msg team have to apply this changes.
 	elm_object_part_content_set(conform, "elm.swallow.ug", navi);
 
 	if (ug->layout_state == UG_LAYOUT_HIDEEFFECT
+		|| ug->layout_state == UG_LAYOUT_HIDE
 	    || ug->layout_state == UG_LAYOUT_INIT) {
 		_DBG("\t UG_LAYOUT_Init(%d) obj=%p", ug->layout_state, obj);
 		ug->layout_state = UG_LAYOUT_SHOWEFFECT;
@@ -351,6 +390,7 @@ static void *on_create(void *win, ui_gadget_h ug,
 
 	evas_object_hide(ug->layout);
 	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_SHOW, on_show_cb, ug);
+	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_DEL, _layout_del_cb, ug);
 
 	ug->layout_state = UG_LAYOUT_INIT;
 
