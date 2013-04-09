@@ -43,6 +43,7 @@
 
 struct appdata {
 	Evas_Object *win;
+	int rotate;
 	Evas_Object *ly_main;
 	Evas_Object *conform;
 

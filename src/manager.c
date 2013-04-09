@@ -410,6 +410,7 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 	}
 
 	if(cur_state != enable) {
+		_DBG("set indicator as %d", enable);
 		utilx_enable_indicator(ug_man.disp, ug_man.win_id, enable);
 	}
 	return 0;

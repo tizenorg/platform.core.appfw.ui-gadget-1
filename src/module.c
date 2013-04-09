@@ -139,3 +139,29 @@ int ug_module_unload(struct ug_module *module)
 	free(module);
 	return 0;
 }
+
+int ug_exist(const char* name)
+{
+	char ug_file[PATH_MAX] = {0,};
+	int ret = 0;
+
+	do {
+		snprintf(ug_file, PATH_MAX, "/usr/ug/lib/libug-%s.so", name);
+		if (file_exist(ug_file)) {
+			ret = 1;
+			break;
+		}
+		snprintf(ug_file, PATH_MAX, "/opt/ug/lib/libug-%s.so", name);
+		if (file_exist(ug_file)) {
+			ret = 1;
+			break;
+		}
+		snprintf(ug_file, PATH_MAX, "/opt/usr/ug/lib/libug-%s.so", name);
+		if (file_exist(ug_file)) {
+			ret = 1;
+			break;
+		}
+	} while (0);
+
+	return ret;
+}
