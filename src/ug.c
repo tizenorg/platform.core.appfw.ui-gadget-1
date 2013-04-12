@@ -281,3 +281,14 @@ UG_API int ug_disable_effect(ui_gadget_h ug)
 
 	return 0;
 }
+
+UG_API int ug_is_installed(const char *name)
+{
+	if(name == NULL){
+		_ERR("name is null");
+		return -1;
+	}
+
+	return ug_exist(name);
+}
+

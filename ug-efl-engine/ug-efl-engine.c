@@ -268,7 +268,8 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 	} else if (ug->layout_state == UG_LAYOUT_HIDEEFFECT) {
 		;
 	} else {
-		_ERR("[UG Effect Plug-in] : layout state error!!");
+		_WRN("[UG Effect Plug-in] : layout state error!!");
+		__del_effect_end(ug);
 	}
 }
 
