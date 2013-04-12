@@ -172,10 +172,10 @@ static void profile_changed_cb(void *data, Evas_Object * obj, void *event)
 {
 	const char *profile = elm_config_profile_get();
 
+	LOGE("!!! profile_changed_cb(%s) !!!", profile);
+
 	if (strcmp(profile, "desktop") == 0)
 		elm_win_indicator_mode_set (obj, ELM_WIN_INDICATOR_HIDE);
-	else
-		elm_win_indicator_mode_set (obj, ELM_WIN_INDICATOR_SHOW);
 }
 
 static Evas_Object *create_win(const char *name)
@@ -189,7 +189,8 @@ static Evas_Object *create_win(const char *name)
 		elm_win_conformant_set(eo, EINA_TRUE);
 		evas_object_smart_callback_add(eo, "delete,request",
 					       win_del, NULL);
-		evas_object_smart_callback_add(eo, "profile,changed", profile_changed_cb, NULL);
+		/* disable destktop mode 
+		evas_object_smart_callback_add(eo, "profile,changed", profile_changed_cb, NULL); */
 		ecore_x_window_size_get(ecore_x_window_root_first_get(),
 					&w, &h);
 		evas_object_resize(eo, w, h);
