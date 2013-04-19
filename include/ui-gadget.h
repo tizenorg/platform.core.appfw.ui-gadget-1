@@ -136,6 +136,8 @@ enum ug_option {
 #define GET_OPT_INDICATOR_VAL(opt) opt % UG_OPT_OVERLAP_ENABLE
 #define GET_OPT_OVERLAP_VAL(opt) opt & UG_OPT_OVERLAP_ENABLE
 
+#define UG_SERVICE_DATA_RESULT "__UG_SEND_REUSLT__"
+
 /**
  * UI gadget callback type
  * @see ug_create()
@@ -761,7 +763,7 @@ int ug_disable_effect(ui_gadget_h ug);
  * N/A
  *
  * @param[in] ug The UI gadget
- * @return 1 - installed, 0 - installed, -1 - error
+ * @return 1 - installed, 0 - not installed, -1 - error
  *
  * \pre None
  * \post None

@@ -189,7 +189,7 @@ static Evas_Object *create_win(const char *name)
 		elm_win_conformant_set(eo, EINA_TRUE);
 		evas_object_smart_callback_add(eo, "delete,request",
 					       win_del, NULL);
-		/* disable destktop mode 
+		/* disable destktop mode
 		evas_object_smart_callback_add(eo, "profile,changed", profile_changed_cb, NULL); */
 		ecore_x_window_size_get(ecore_x_window_root_first_get(),
 					&w, &h);
