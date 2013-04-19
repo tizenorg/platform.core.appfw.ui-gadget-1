@@ -219,9 +219,9 @@ UG_API int ug_send_key_event(enum ug_key_event event)
 	return ugman_send_key_event(event);
 }
 
-UG_API int ug_send_result(ui_gadget_h ug, service_h result)
+UG_API int ug_send_result(ui_gadget_h ug, service_h send)
 {
-	service_h result_dup = NULL;
+	service_h send_dup = NULL;
 
 	if (!ug || !ugman_ug_exist(ug)) {
 		_ERR("ug_send_result() failed: Invalid ug");
@@ -234,18 +234,54 @@ UG_API int ug_send_result(ui_gadget_h ug, service_h result)
 		return -1;
 	}
 
-	if (result) {
-		service_clone(&result_dup, result);
-		if (!result_dup) {
+	if (send) {
+		service_clone(&send_dup, send);
+		if (!send_dup) {
 			_ERR("ug_send_result() failed: service_destroy failed");
 			return -1;
 		}
 	}
 
-	ug->cbs.result_cb(ug, result_dup, ug->cbs.priv);
+	ug->cbs.result_cb(ug, send_dup, ug->cbs.priv);
 
-	if (result_dup)
-		service_destroy(result_dup);
+	if (send_dup)
+		service_destroy(send_dup);
+
+	return 0;
+}
+
+UG_API int ug_send_result_full(ui_gadget_h ug, service_h send, service_result_e result)
+{
+	service_h send_dup = NULL;
+	char tmp_result[4] = {0,};
+
+	if (!ug || !ugman_ug_exist(ug)) {
+		_ERR("ug_send_result() failed: Invalid ug");
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (!ug->cbs.result_cb) {
+		_ERR("ug_send_result() failed: result callback does not exist");
+		return -1;
+	}
+
+	if (send) {
+		service_clone(&send_dup, send);
+		if (!send_dup) {
+			_ERR("ug_send_result() failed: service_destroy failed");
+			return -1;
+		}
+	}
+
+	snprintf(tmp_result, 4, "%d", result);
+
+	service_add_extra_data(send_dup, UG_SERVICE_DATA_RESULT, (const char*)tmp_result);
+
+	ug->cbs.result_cb(ug, send_dup, ug->cbs.priv);
+
+	if (send_dup)
+		service_destroy(send_dup);
 
 	return 0;
 }

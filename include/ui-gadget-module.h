@@ -158,7 +158,53 @@ int ug_destroy_me(ui_gadget_h ug);
  * ...
  * \endcode
  */
-int ug_send_result(ui_gadget_h ug, service_h result);
+int ug_send_result(ui_gadget_h ug, service_h send);
+
+
+/**
+ * \par Description:
+ * This function sends result to caller of the given UI gadget instance.
+ *
+ * \par Purpose:
+ * This function is used for sending result to caller of the given UI gadget instance. The result have to be composed with service handle.
+ *
+ * \par Typical use case:
+ * UI gadget developer who want to send result to caller of the given UI gadget instance could use the function.
+ *
+ * \par Method of function operation:
+ * Result callback which is registered by caller with ug_create() is invoked.
+ *
+ * \par Context of function:
+ * This function supposed to be called in the created UI gadget.
+ *
+ * @param[in] ug the UI gadget
+ * @param[in] the service handle in which the results of the callee (see \ref service_PG "Tizen managed api reference guide")
+ * @param[in] The result code of the launch request. (This is valid in case that ug is launched by appcontrol)
+ * @return 0 on success, -1 on error
+ *
+ * \pre None
+ * \post None
+ * \see None
+ * \remarks After send your message, you have to release it using service_destroy()
+ *
+ * \par Sample code:
+ * \code
+ * #include <ui-gadget-module.h>
+ * ...
+ * // make a result with service
+ * service_h result;
+ * service_create(&result);
+ * service_add_extra_data(result, "Content", "Hello");
+ *
+ * // send the result
+ * ug_send_result_full(ug, result, SERVICE_RESULT_SUCCEEDED);
+ *
+ * // release the result
+ * service_destroy(result);
+ * ...
+ * \endcode
+ */
+int ug_send_result_full(ui_gadget_h ug, service_h send, service_result_e result);
 
 #ifdef __cplusplus
 }
