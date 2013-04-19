@@ -374,6 +374,7 @@ static void *on_create(void *win, ui_gadget_h ug,
 
 	if (!navi) {
 		navi = elm_naviframe_add(conform);
+		elm_object_focus_allow_set(navi, EINA_FALSE);
 		elm_object_style_set(navi, "uglib");
 		elm_naviframe_content_preserve_on_pop_set(navi, EINA_TRUE);
 		_DBG("\t new navi first navi=%p", navi);
