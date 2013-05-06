@@ -51,7 +51,6 @@ ln -sf /usr/bin/ug-client /usr/bin/ug-launcher
 
 %files
 %manifest ui-gadget-1.manifest
-/etc/smack/accesses2.d/ui-gadget-1.rule
 %defattr(-,root,root,-)
 %{_libdir}/*.so.*
 %{_libdir}/lib%{name}-efl-engine.so
