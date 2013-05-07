@@ -1,7 +1,7 @@
 
 Name:       ui-gadget-1
 Summary:    UI Gadget Library
-Version:    0.1.23
+Version:    0.1.24
 Release:    1
 Group:      System/Libraries
 License:    Apache License, Version 2.0
@@ -57,6 +57,7 @@ ln -sf /usr/bin/ug-client /usr/bin/ug-launcher
 /usr/share/edje/ug_effect.edj
 %{_bindir}/ug-client
 /usr/share/edje/ug-client/*.edj
+/opt/etc/smack/accesses.d/ui-gadget-1.rule
 
 %files devel
 %defattr(-,root,root,-)
