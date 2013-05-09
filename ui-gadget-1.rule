@@ -7,6 +7,13 @@ ui-gadget::client sys-assert::core rwxat
 e17 ui-gadget::client rwx--
 stest-service ui-gadget::client r-x--
 ui-gadget::client stest-service -w---
+ui-gadget::client system::vconf_setting r----
+ui-gadget::client system::vconf_inhouse r----
+ui-gadget::client system::vconf_privacy r----
+ui-gadget::client system::vconf_system r----
+ui-gadget::client system::vconf_multimedia r----
+ui-gadget::client system::vconf_network r----
+ui-gadget::client system::vconf_misc r----
 ui-gadget::client system::pulseaudio rwxat
 com.samsung.app-tray ui-gadget::client r-xat
 ui-gadget::client isf rwx--
