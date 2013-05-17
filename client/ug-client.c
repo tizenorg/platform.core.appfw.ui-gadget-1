@@ -282,12 +282,14 @@ static int app_create(void *data)
 	} else {
 		LOGE("elm win rotation get error");
 	}
+    /*
 	if(elm_win_wm_rotation_supported_get(win)) {
 		int rots[4] = { 0, 90, 180, 270 };
 		elm_win_wm_rotation_available_rotations_set(win, (const int*)&rots, 4);
 	} else {
 		LOGW("wm rotation supported get error");
 	}
+    */
 	evas_object_smart_callback_add(win, "wm,rotation,changed", rotate, data);
 
 	appcore_set_event_callback(APPCORE_EVENT_LOW_MEMORY, low_memory, ad);
