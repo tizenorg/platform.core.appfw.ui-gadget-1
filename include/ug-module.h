@@ -28,6 +28,7 @@ struct ug_module {
 	void *handle;
 	char *module_name;
 	struct ug_module_ops ops;
+	char *addr;
 };
 
 struct ug_module *ug_module_load(const char *name);

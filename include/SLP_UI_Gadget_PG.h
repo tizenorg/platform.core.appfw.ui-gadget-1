@@ -189,8 +189,6 @@ UG_OPT_INDICATOR_LANDSCAPE_ONLY
 UG_OPT_INDICATOR_DISABLE
 // current indicator status will be held
 UG_OPT_INDICATOR_MANUAL
-// Enable indicator overlap
-UG_OPT_OVERLAP_ENABLE
 @endcode
 
 \note <b>struct ug_data</b> is a user defined private data structure describing base layout, own UI gadget handler, and whatever you need:
@@ -509,7 +507,6 @@ Available options are as following:
 - UG_OPT_LANDSCAPE_ONLY
 - UG_OPT_INDICATOR_DISABLE
 - UG_OPT_INDICATOR_MANUAL
-- UG_OPT_OVERLAP_ENABLE
 
 And we used UG_OPT_INDICATOR_POTRAIT_ONLY in "helloUG-efl"
 

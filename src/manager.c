@@ -78,12 +78,19 @@ static int ug_relation_del(ui_gadget_h ug)
 
 	p = ug->parent;
 	if (!p) {
-		_ERR("ug_relation_del failed: no parent");
+		_WRN("ug_relation_del failed: no parent");
 		return -1;
 	}
-	p->children = g_slist_remove(p->children, ug);
-	if (ug->children)
+
+	if(p->children) {
+		p->children = g_slist_remove(p->children, ug);
+	}
+
+	if (ug->children) {
 		g_slist_free(ug->children);
+		ug->children = NULL;
+	}
+
 	ug->parent = NULL;
 
 	return 0;
@@ -231,10 +238,11 @@ static void ugman_tree_dump(ui_gadget_h ug)
 
 	while (child) {
 		c = child->data;
-		_DBG("[%d] %s [%c] (%p) (PARENT:  %s)",
+		_DBG("[%d] %s [%c] (mem : %s) (ug : %p) (PARENT:  %s)",
 		     lv,
 		     c && c->name ? c->name : "NO CHILD INFO FIXIT!!!",
-		     c && c->mode == UG_MODE_FULLVIEW ? 'F' : 'f', c, name);
+		     c && c->mode == UG_MODE_FULLVIEW ? 'F' : 'f', 
+			 c->module->addr, c, name);
 		ugman_tree_dump(c);
 		child = g_slist_next(child);
 	}
@@ -328,6 +336,8 @@ static int ugman_ug_resume(void *data)
 	if (!ug)
 		goto end;
 
+	_DBG("ug(%p)->state : %d", ug, ug->state);
+
 	switch (ug->state) {
 	case UG_STATE_CREATED:
 		ugman_ug_start(ug);
@@ -359,24 +369,6 @@ static int ugman_ug_resume(void *data)
 	return 0;
 }
 
-static int ugman_indicator_overlap_update(enum ug_option opt)
-{
-	if (!ug_man.win) {
-		_ERR("indicator update failed: no window");
-		return -1;
-	}
-
-	if(GET_OPT_OVERLAP_VAL(opt)) {
-		_DBG("update overlap indicator / opt(%d)", opt);
-		elm_object_signal_emit(ug_man.conform, "elm,state,indicator,overlap", "");
-	} else {
-		_DBG("update no overlap indicator / opt(%d)", opt);
-		elm_object_signal_emit(ug_man.conform, "elm,state,indicator,nooverlap", "");
-	}
-
-	return 0;
-}
-
 static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 {
 	int enable;
@@ -386,31 +378,31 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 
 	_DBG("indicator update opt(%d) cur_state(%d)", opt, cur_state);
 
-	switch (GET_OPT_INDICATOR_VAL(opt)) {
-	case UG_OPT_INDICATOR_ENABLE:
-		if (event == UG_EVENT_NONE)
-			enable = 1;
-		else
-			enable = cur_state ? 1 : 0;
-		break;
-	case UG_OPT_INDICATOR_PORTRAIT_ONLY:
-		enable = ug_man.is_landscape ? 0 : 1;
-		break;
-	case UG_OPT_INDICATOR_LANDSCAPE_ONLY:
-		enable = ug_man.is_landscape ? 1 : 0;
-		break;
-	case UG_OPT_INDICATOR_DISABLE:
-		enable = 0;
-		break;
-	case UG_OPT_INDICATOR_MANUAL:
-		return 0;
-	default:
-		_ERR("update failed: Invalid opt(%d)", opt);
-		return -1;
+	switch (opt) {
+		case UG_OPT_INDICATOR_ENABLE:
+			if (event == UG_EVENT_NONE)
+				enable = 1;
+			else
+				enable = cur_state ? 1 : 0;
+			break;
+		case UG_OPT_INDICATOR_PORTRAIT_ONLY:
+			enable = ug_man.is_landscape ? 0 : 1;
+			break;
+		case UG_OPT_INDICATOR_LANDSCAPE_ONLY:
+			enable = ug_man.is_landscape ? 1 : 0;
+			break;
+		case UG_OPT_INDICATOR_DISABLE:
+			enable = 0;
+			break;
+		case UG_OPT_INDICATOR_MANUAL:
+			return 0;
+		default:
+			_ERR("update failed: Invalid opt(%d)", opt);
+			return -1;
 	}
 
 	if(cur_state != enable) {
-		_DBG("set indicator as %d", enable);
+		_DBG("set indicator status as %d", enable);
 		utilx_enable_indicator(ug_man.disp, ug_man.win_id, enable);
 	}
 	return 0;
@@ -423,7 +415,6 @@ static int ugman_ug_getopt(ui_gadget_h ug)
 
 	/* Indicator Option */
 	if (ug->mode == UG_MODE_FULLVIEW) {
-		ugman_indicator_overlap_update(ug->opt);
 		ugman_indicator_update(ug->opt, UG_EVENT_NONE);
 	}
 
@@ -461,36 +452,28 @@ static int ugman_ug_destroy(void *data)
 {
 	ui_gadget_h ug = data;
 	struct ug_module_ops *ops = NULL;
-	GSList *child, *trail;
+	struct ug_cbs *cbs;
 
 	job_start();
 
 	if (!ug)
 		goto end;
 
-	_DBG("ugman_ug_destroy ug(%p) state(%d)", ug, ug->state);
+	_DBG("ug(%p) state(%d)", ug, ug->state);
 
 	switch (ug->state) {
-	case UG_STATE_CREATED:
-	case UG_STATE_RUNNING:
-	case UG_STATE_STOPPED:
-	case UG_STATE_DESTROYING:
-		break;
-	default:
-		goto end;
+		case UG_STATE_CREATED:
+		case UG_STATE_RUNNING:
+		case UG_STATE_STOPPED:
+		case UG_STATE_DESTROYING:
+		case UG_STATE_PENDING_DESTROY:
+			break;
+		default:
+			_WRN("ug(%p) state is already destroyed", ug);
+			goto end;
 	}
 
 	ug->state = UG_STATE_DESTROYED;
-
-	if (ug->children) {
-		child = ug->children;
-		_DBG("ug_destroy ug(%p) has child(%p)", ug, child->data);
-		while (child) {
-			trail = g_slist_next(child);
-			ugman_ug_destroy(child->data);
-			child = trail;
-		}
-	}
 
 	if((ug != ug_man.root) && (ug->layout) &&
 		(ug->layout_state != UG_LAYOUT_DESTROY)) {
@@ -512,13 +495,29 @@ static int ugman_ug_destroy(void *data)
 		ops->destroy(ug, ug->service, ops->priv);
 	}
 
+	cbs = &ug->cbs;
+	if (cbs && cbs->end_cb) {
+		_DBG("ug(%p) end cb will be invoked", ug);
+		cbs->end_cb(ug, cbs->priv);
+	}
+
+	if((ug->parent) && (ug->parent->state == UG_STATE_PENDING_DESTROY)) {
+		if((ug->parent->children) && (g_slist_length(ug->parent->children) == 1)) {
+			_WRN("pended parent ug(%p) destroy job is added to loop", ug->parent);
+			ecore_idler_add((Ecore_Task_Cb)ugman_ug_destroy, ug->parent);
+		} else {
+			_WRN("pended parent ug(%p) will be destroyed after another children is destroyed", ug->parent);
+		}
+	}
+
 	if (ug != ug_man.root)
 		ug_relation_del(ug);
 
 	if (ug->mode == UG_MODE_FULLVIEW) {
 		if (ug_man.fv_top == ug) {
 			ug_fvlist_del(ug);
-			ugman_ug_getopt(ug_man.fv_top);
+			if(!ug_man.destroy_all)
+				ugman_ug_getopt(ug_man.fv_top);
 		} else {
 			ug_fvlist_del(ug);
 		}
@@ -540,7 +539,12 @@ static int ugman_ug_destroy(void *data)
 static void ug_hide_end_cb(void *data)
 {
 	ui_gadget_h ug = data;
-	ecore_idler_add((Ecore_Task_Cb)ugman_ug_destroy, ug);
+	if (ug->children) {
+		_WRN("child ug is still destroying. parent ug(%p) will be destroyed later", ug);
+		ug->state = UG_STATE_PENDING_DESTROY;
+	} else {
+		ecore_idler_add((Ecore_Task_Cb)ugman_ug_destroy, (void *)ug);
+	}
 }
 
 static int ugman_ug_create(void *data)
@@ -572,7 +576,6 @@ static int ugman_ug_create(void *data)
 		}
 		if (ug->mode == UG_MODE_FULLVIEW) {
 			if (eng_ops && eng_ops->create) {
-				//change start cb function call after transition,finished for fullview
 				ug_man.conform = eng_ops->create(ug_man.win, ug, ugman_ug_start);
 			}
 		}
@@ -622,8 +625,17 @@ int ugman_ug_add(ui_gadget_h parent, ui_gadget_h ug)
 		ug_fvlist_add(ug_man.root);
 	}
 
-	if (!parent)
+	if (!parent) {
 		parent = ug_man.root;
+	} else {
+		switch (parent->state) {
+			case UG_STATE_DESTROYING:
+			case UG_STATE_PENDING_DESTROY:
+			case UG_STATE_DESTROYED:
+				_WRN("parent(%p) state(%d) error", parent, parent->state);
+				return -1;
+		}
+	}
 
 	if (ug_relation_add(parent, ug)) {
 		_ERR("failed : ug_relation_add fail");
@@ -695,15 +707,6 @@ int ugman_ug_destroying(ui_gadget_h ug)
 	if (ug->module)
 		ops = &ug->module->ops;
 
-	if (ug->children) {
-		child = ug->children;
-		while (child) {
-			trail = g_slist_next(child);
-			ugman_ug_destroying(child->data);
-			child = trail;
-		}
-	}
-
 	if (ops && ops->destroying)
 		ops->destroying(ug, ug->service, ops->priv);
 
@@ -723,18 +726,30 @@ int ugman_ug_del(ui_gadget_h ug)
 	_DBG("ugman_ug_del start ug(%p)", ug);
 
 	if (ug->destroy_me) {
-		_ERR("ugman_ug_del failed: ug is alreay on destroying");
+		_WRN("ugman_ug_del failed: ug is alreay on destroying");
 		return -1;
 	}
 
 	if (!ug_man.is_initted) {
-		_ERR("ugman_ug_del failed: manager is not initted");
+		_WRN("ugman_ug_del failed: manager is not initted");
 		return -1;
 	}
 
 	if (!ug_man.root) {
 		_ERR("ugman_ug_del failed: no root");
 		return -1;
+	}
+
+	if (ug->children) {
+		GSList *child, *trail;
+
+		child = ug->children;
+		_DBG("ugman_ug_del ug(%p) has child(%p)", ug, child->data);
+		while (child) {
+			trail = g_slist_next(child);
+			ugman_ug_del(child->data);
+			child = trail;
+		}
 	}
 
 	ugman_ug_destroying(ug);
@@ -775,6 +790,24 @@ int ugman_ug_del(ui_gadget_h ug)
 	return 0;
 }
 
+
+int ugman_ug_del_child(ui_gadget_h ug)
+{
+	GSList *child, *trail;
+
+	if (ug->children) {
+		child = ug->children;
+		_DBG("ug destroy all. ug(%p) has child(%p)", ug, child->data);
+		while (child) {
+			trail = g_slist_next(child);
+			ugman_ug_del_child(child->data);
+			child = trail;
+		}
+	}
+
+	ugman_ug_destroy(ug);
+}
+
 int ugman_ug_del_all(void)
 {
 	/*  Terminate */
@@ -790,10 +823,11 @@ int ugman_ug_del_all(void)
 
 	_DBG("ug_del_all. root(%p) walking(%d) ", ug_man.root, ug_man.walking);
 
-	if (ug_man.walking > 0)
+	if (ug_man.walking > 0) {
 		ug_man.destroy_all = 1;
-	else
-		ugman_ug_destroy(ug_man.root);
+	} else {
+		ugman_ug_del_child(ug_man.root);
+	}
 
 	return 0;
 }
@@ -840,7 +874,7 @@ int ugman_pause(void)
 	}
 
 	if (!ug_man.root) {
-		_ERR("ugman_pause failed: no root");
+		_WRN("ugman_pause failed: no root");
 		return -1;
 	}
 
@@ -971,9 +1005,30 @@ void *ugman_get_window(void)
 
 void *ugman_get_conformant(void)
 {
-	return ug_man.conform;
-}
+	struct ug_engine_ops *eng_ops = NULL;
+	void* ret = NULL;
 
+	if(ug_man.conform) {
+		_DBG("return cached conform(%p) info", ug_man.conform);
+		return ug_man.conform;
+	}
+
+	if (ug_man.engine) {
+		eng_ops = &ug_man.engine->ops;
+	} else {
+		_WRN("ui engine is not loaded");
+		return NULL;
+	}
+
+	if (eng_ops && eng_ops->create) {
+		ret = eng_ops->request(ug_man.win, NULL, UG_UI_REQ_GET_CONFORMANT);
+		ug_man.conform = ret;
+	} else {
+		_WRN("ui engine is not loaded");
+	}
+
+	return ret;
+}
 
 static inline void job_start(void)
 {
@@ -986,8 +1041,10 @@ static inline void job_end(void)
 
 	if (!ug_man.walking && ug_man.destroy_all) {
 		ug_man.destroy_all = 0;
-		if (ug_man.root)
-			ugman_ug_destroy(ug_man.root);
+		if (ug_man.root) {
+			_DBG("ug_destroy_all pneding job exist. ug_destroy_all begin");
+			ugman_ug_del_all();
+		}
 	}
 
 	if (ug_man.walking < 0)

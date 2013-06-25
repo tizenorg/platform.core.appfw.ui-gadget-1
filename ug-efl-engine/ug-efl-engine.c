@@ -37,6 +37,25 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj, void *event_info);
 static void (*show_end_cb)(void* data) = NULL;
 static void (*hide_end_cb)(void* data) = NULL;
 
+
+static Evas_Object *_get_win_conformant(Evas_Object *win)
+{
+	Evas_Object *con = NULL;
+
+	if (!win) {
+		_WRN("\t Invalid param error");
+		return NULL;
+	}
+
+	con = evas_object_data_get(win, "\377 elm,conformant");
+	if (con)
+		_DBG("\t success to get conformant");
+	else
+		_WRN("\t fail to get conformant");
+
+	return con;
+}
+
 static void _layout_del_cb(void *data, Evas_Object *obj, void *event_info)
 {
 	ui_gadget_h ug = (ui_gadget_h)data;
@@ -45,40 +64,11 @@ static void _layout_del_cb(void *data, Evas_Object *obj, void *event_info)
 
 	_WRN("ug(%p) layout is deleted by abnormal path", ug);
 
-	evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_DEL, _layout_del_cb);
+	evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_DEL,
+		(Evas_Object_Event_Cb)_layout_del_cb);
 
 	ug->layout_state = UG_LAYOUT_DESTROY;
 	ug->layout = NULL;
-}
-
-static Eina_Bool __destroy_end_cb(void *data)
-{
-	GSList *child;
-	ui_gadget_h ug = (ui_gadget_h)data;
-
-	_DBG("\t __destroy_end_cb ug=%p", ug);
-
-	if (ug->children) {
-		child = ug->children;
-		//_DBG("\t ug(%p) has children(%p)", ug, child);
-		while (child) {
-			if(!child->data) {
-				_ERR("child->data is null");
-				return ECORE_CALLBACK_CANCEL;
-			}
-
-			//_DBG("\t child(%p) layout_state(%d)", child, ((ui_gadget_h)child->data)->layout_state);
-
-			if( ((ui_gadget_h)child->data)->layout_state == UG_LAYOUT_HIDEEFFECT) {
-				//_DBG("\t wait hideeffect child(%p)", ug);
-				return ECORE_CALLBACK_RENEW;
-			}
-			child = g_slist_next(child);
-		}
-	}
-
-	hide_end_cb(ug);
-	return ECORE_CALLBACK_CANCEL;
 }
 
 static void __del_effect_end(ui_gadget_h ug)
@@ -94,12 +84,13 @@ static void __del_effect_end(ui_gadget_h ug)
 	}
 	if (ug->layout) {
 		evas_object_hide(ug->layout);
-		evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_DEL, _layout_del_cb);
+		evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_DEL,
+			(Evas_Object_Event_Cb)_layout_del_cb);
 	}
 
-	ecore_idler_add((Ecore_Task_Cb)__destroy_end_cb, (void *)ug);
-
 	ug->layout_state = UG_LAYOUT_DESTROY;
+
+	hide_end_cb(ug);
 }
 
 static void __del_finished(void *data, Evas_Object *obj, void *event_info)
@@ -131,34 +122,14 @@ static void __del_effect_top_layout(ui_gadget_h ug)
 
 static void __del_effect_layout(ui_gadget_h ug, ui_gadget_h t_ug)
 {
-	GSList *child;
-
 	if (!ug)
 		return;
 
 	_DBG("\t ug=%p state=%d , t_ug=%p", ug, ug->layout_state, t_ug);
 
-	if (ug->children) {
-		child = ug->children;
-		_DBG("\t ug(%p) has children(%p)", ug, child);
-		while (child) {
-			__del_effect_layout(child->data, t_ug);
-			child = g_slist_next(child);
-		}
-	}
-
-	if((ug == t_ug)&&(ug->layout_state != UG_LAYOUT_NOEFFECT)){
-		if (ug->layout_state != UG_LAYOUT_HIDEEFFECT) {
-			__del_effect_top_layout(ug);
-		} else {
-			_ERR("\t top ug(%p) state is hideeffect.");
-			return;
-		}
-	} else {
-		_DBG("\t remove navi item: ug=%p state=%d", ug, ug->layout_state);
-		elm_object_item_del(ug->effect_layout);
-		ug->effect_layout = NULL;
-	}
+	_DBG("\t remove navi item: ug=%p state=%d", ug, ug->layout_state);
+	elm_object_item_del(ug->effect_layout);
+	ug->effect_layout = NULL;
 
 	__del_effect_end(ug);
 }
@@ -239,14 +210,15 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 {
 	if (!ug)
 		return;
-	_DBG("\t ug=%p tug=%p state=%d", ug, t_ug, ug->layout_state);
+	_DBG("\t ug=%p tug=%p layout_state=%d", ug, t_ug, ug->layout_state);
 
 	evas_object_intercept_hide_callback_del(ug->layout,
 						__on_hideonly_cb);
 
 	if(hide_cb == NULL) {
 		/* ug_destroy_all case */
-		evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_DEL, _layout_del_cb);
+		evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_DEL,
+			(Evas_Object_Event_Cb)_layout_del_cb);
 		return;
 	}
 
@@ -268,19 +240,8 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 	} else if (ug->layout_state == UG_LAYOUT_HIDEEFFECT) {
 		;
 	} else {
-		_WRN("[UG Effect Plug-in] : layout state error!!");
+		_WRN("[UG Effect Plug-in] : layout state(%p) error!!", ug->layout_state);
 		__del_effect_end(ug);
-	}
-}
-
-static void __update_indicator_overlap(int opt)
-{
-	if (GET_OPT_OVERLAP_VAL(opt)) {
-		_DBG("\t this is Overlap UG. Send overlap sig on_show_cb");
-		elm_object_signal_emit(conform, "elm,state,indicator,overlap", "");
-	}  else {
-		_DBG("\t this is no overlap UG. Send no overlap sig on_show_cb");
-		elm_object_signal_emit(conform, "elm,state,indicator,nooverlap", "");
 	}
 }
 
@@ -330,17 +291,12 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 		_DBG("\t UG_LAYOUT_Init(%d) obj=%p", ug->layout_state, obj);
 		ug->layout_state = UG_LAYOUT_SHOWEFFECT;
 
-		__update_indicator_overlap(ug->opt);
-
 		evas_object_smart_callback_add(navi, "transition,finished",
 						__show_finished, ug);
 		ug->effect_layout = elm_naviframe_item_push(navi, NULL, NULL, NULL,
 						    ug->layout, NULL);
 	} else if (ug->layout_state == UG_LAYOUT_NOEFFECT) {
 		_DBG("\t UG_LAYOUT_NOEFFECT obj=%p", obj);
-
-		__update_indicator_overlap(ug->opt);
-
 		Elm_Object_Item *navi_top = elm_naviframe_top_item_get(navi);
 		ug->effect_layout = elm_naviframe_item_insert_after(navi,
 				navi_top, NULL, NULL, NULL, ug->layout, NULL);
@@ -392,11 +348,31 @@ static void *on_create(void *win, ui_gadget_h ug,
 
 	evas_object_hide(ug->layout);
 	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_SHOW, on_show_cb, ug);
-	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_DEL, _layout_del_cb, ug);
+	evas_object_event_callback_add(ug->layout, EVAS_CALLBACK_DEL,
+		(Evas_Object_Event_Cb)_layout_del_cb, ug);
 
 	ug->layout_state = UG_LAYOUT_INIT;
 
 	return conform;
+}
+
+static void *on_request(void *data, ui_gadget_h ug, int req)
+{
+	void *ret;
+
+	_DBG("on_request ug(%p) req(%d)", ug, req);
+
+	switch(req)
+	{
+		case UG_UI_REQ_GET_CONFORMANT :
+			ret = (void *)_get_win_conformant((Evas_Object *)data);
+			break;
+		default :
+			_WRN("wrong req id(%d)", req);
+			return NULL;
+	}
+
+	return ret;
 }
 
 UG_ENGINE_API int UG_ENGINE_INIT(struct ug_engine_ops *ops)
@@ -406,6 +382,7 @@ UG_ENGINE_API int UG_ENGINE_INIT(struct ug_engine_ops *ops)
 
 	ops->create = on_create;
 	ops->destroy = on_destroy;
+	ops->request = on_request;
 
 	return 0;
 }

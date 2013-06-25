@@ -38,7 +38,6 @@
  * @{
  */
 
-#include <bundle.h>
 #include "ui-gadget.h"
 
 #ifdef __cplusplus
@@ -54,8 +53,10 @@ struct ug_engine_ops {
 	void *(*create)(void *win, ui_gadget_h ug, void(*show_end_cb)(void *data));
 	/** destroy operation */
 	void (*destroy)(ui_gadget_h ug, ui_gadget_h fv_top, void(*hide_end_cb)(void *data));
+	/** request operation */
+	void *(*request)(void *data, ui_gadget_h ug, int req);
 	/** reserved operations */
-	void *reserved[4];
+	void *reserved[3];
 };
 
 #ifdef __cplusplus

@@ -25,13 +25,13 @@
 #include <Ecore_X.h>
 #include <dlog.h>
 #include <aul.h>
-#include <appsvc.h>
 #include <app.h>
-#include <runtime_info.h>
+#include <vconf.h>
 
 #include "ug-client.h"
 
 #include <Ecore_X.h>
+#include <utilX.h>
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -145,26 +145,61 @@ void _ug_client_layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
 	}
 }
 
-void _ug_client_result_cb(ui_gadget_h ug, service_h result, void *priv)
+void _ug_client_result_cb(ui_gadget_h ug, service_h reply, void *priv)
 {
-	struct appdata *ad;
+	struct appdata *ad = NULL;
 	int ret;
+	char* value = NULL;
+	int result;
 
 	if (!ug || !priv)
 		return;
-	ad = priv;
 
-	ret = service_reply_to_launch_request(result, ad->request, SERVICE_RESULT_SUCCEEDED);
+	ret = service_get_extra_data (reply, UG_SERVICE_DATA_RESULT, &value);
+	if((ret == SERVICE_ERROR_NONE) && (value)) {
+		result = atoi(value);
+		LOGD("reply result is %d", result);
+	} else {
+		LOGW("get reply result error(%d) . result will be SERVICE_RESULT_SUCCEEDED", ret);
+		result = SERVICE_RESULT_SUCCEEDED;
+	}
+
+	ad = priv;
+	if (!ad) {
+		LOGE("appdata is null");
+		return;
+	}
+
+	ret = service_reply_to_launch_request(reply, ad->request, (service_result_e)result);
 	if (ret != SERVICE_ERROR_NONE)
 		LOGE("service_reply_to_launch_request failed, %d", ret);
 }
 
 void _ug_client_destroy_cb(ui_gadget_h ug, void *priv)
 {
+	struct appdata *ad = NULL;
+
 	if (!ug)
 		return;
 
-	ug_destroy(ug);
+	ad = priv;
+	if (!ad) {
+		LOGE("appdata is null. win lower is fail");
+	} else {
+		LOGD("window lower");
+		elm_win_lower(ad->win);
+	}
+
+	elm_exit();
+}
+
+void _ug_client_end_cb(ui_gadget_h ug, void *priv)
+{
+	if (!ug)
+		return;
+
+	LOGD("_ug_client_end_cb invoked");
+
 	elm_exit();
 }
 
@@ -175,7 +210,7 @@ static void profile_changed_cb(void *data, Evas_Object * obj, void *event)
 	LOGE("!!! profile_changed_cb(%s) !!!", profile);
 
 	if (strcmp(profile, "desktop") == 0)
-		elm_win_indicator_mode_set (obj, ELM_WIN_INDICATOR_HIDE);
+		elm_win_indicator_mode_set(obj, ELM_WIN_INDICATOR_HIDE);
 }
 
 static Evas_Object *create_win(const char *name)
@@ -230,13 +265,38 @@ static int low_battery(void *data)
 
 static int lang_changed(void *data)
 {
+	char* lang = NULL;
+
+	lang = vconf_get_str(VCONFKEY_LANGSET);
+	if(lang) {
+		LOGD("lang : %s", lang);
+		elm_language_set((const char*)lang);
+		free(lang);
+	} else {
+		LOGW("language get error");
+	}
+
 	return ug_send_event(UG_EVENT_LANG_CHANGE);
+}
+
+static void _home_screen_top_cb(keynode_t* node, void *data)
+{
+	struct appdata *ad = data;
+
+	if (!node) {
+		LOGE("home screen top cb node value is null");
+		return;
+	}
+
+	if ((node->value.i == VCONFKEY_IDLE_SCREEN_TOP_TRUE) && (!ad->is_transient)) {
+		LOGW("home key pressed. window is not transient. ug client will be terminated");
+		elm_exit();
+	}
 }
 
 static int app_create(void *data)
 {
 	struct appdata *ad = data;
-	enum appcore_rm rm;
 	Evas_Object *win;
 	Evas_Object *ly;
 	Evas_Object *conform;
@@ -269,7 +329,6 @@ static int app_create(void *data)
 	edje_object_signal_callback_add(elm_layout_edje_get(ly),
 					"EXIT", "*", main_quit_cb, NULL);
 	ad->ly_main = ly;
-	elm_win_indicator_mode_set(win, ELM_WIN_INDICATOR_SHOW);
 	lang_changed(ad);
 
 	/* rotate notice */
@@ -317,6 +376,14 @@ static int app_terminate(void *data)
 		ad->win = NULL;
 	}
 
+	service_destroy(ad->request);
+
+	if (ad->name) {
+		free(ad->name);
+	}
+
+	LOGD("app_terminate end");
+
 	return 0;
 }
 
@@ -327,10 +394,14 @@ static int app_pause(void *data)
 	LOGD("app_pause called");
 
 	ug_pause();
+
+#if ENABLE_TRANSIENT_SUB_MODE
 	if (!ad->is_transient) {
 		LOGD("app_pause received. close ug service");
 		elm_exit();
 	}
+#endif
+
 	return 0;
 }
 
@@ -356,10 +427,15 @@ static int app_reset(bundle *b, void *data)
 	Ecore_X_Window id2 = elm_win_xwindow_get(ad->win);
 
 	ret = appsvc_request_transient_app(b, id2, svc_cb, "svc test");
-	if (ret)
+	if (ret) {
 		LOGD("fail to request transient app: return value(%d)", ret);
-	else
+		if(vconf_notify_key_changed(VCONFKEY_IDLE_SCREEN_TOP, _home_screen_top_cb, ad) != 0) {
+			LOGW("home screen vconf key changed cb error");
+		}
+	} else {
+		/* check home screen raise */
 		ad->is_transient = 1;
+	}
 
 	if (ad->win) {
 		elm_win_activate(ad->win);
@@ -379,6 +455,7 @@ static int app_reset(bundle *b, void *data)
 	cbs.layout_cb = _ug_client_layout_cb;
 	cbs.destroy_cb = _ug_client_destroy_cb;
 	cbs.result_cb = _ug_client_result_cb;
+	cbs.end_cb = _ug_client_end_cb;
 	cbs.priv = ad;
 
 	mode = ad->is_frameview ? UG_MODE_FRAMEVIEW : UG_MODE_FULLVIEW;

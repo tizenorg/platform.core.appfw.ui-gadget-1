@@ -1,7 +1,7 @@
 
 Name:       ui-gadget-1
 Summary:    UI Gadget Library
-Version:    0.1.25
+Version:    0.1.26
 Release:    1
 Group:      System/Libraries
 License:    Apache License, Version 2.0
@@ -16,8 +16,8 @@ BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(appsvc)
 BuildRequires:  pkgconfig(capi-appfw-application)
-BuildRequires:  pkgconfig(capi-system-runtime-info)
 BuildRequires:  pkgconfig(capi-appfw-app-manager)
+BuildRequires:  pkgconfig(vconf)
 BuildRequires:  cmake
 BuildRequires:  edje-bin
 
