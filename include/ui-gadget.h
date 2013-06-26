@@ -128,8 +128,13 @@ enum ug_option {
 	UG_OPT_INDICATOR_MANUAL = 0x04,
 			/**< Indicator option:
 			Indicator will be handled manually */
+	UG_OPT_OVERLAP_ENABLE = 0x08,
+			/**< Overlap option: Enable indicator overlap  */		
 	UG_OPT_MAX
 };
+
+#define GET_OPT_INDICATOR_VAL(opt) opt % UG_OPT_OVERLAP_ENABLE
+#define GET_OPT_OVERLAP_VAL(opt) opt & UG_OPT_OVERLAP_ENABLE
 
 #define UG_SERVICE_DATA_RESULT "__UG_SEND_REUSLT__"
 
