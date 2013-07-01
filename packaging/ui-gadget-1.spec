@@ -6,6 +6,7 @@ Release:    1
 Group:      System/Libraries
 License:    Apache License, Version 2.0
 Source0:    %{name}-%{version}.tar.gz
+Source1001: 	ui-gadget-1.manifest
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 BuildRequires:  pkgconfig(utilX)
@@ -33,6 +34,7 @@ Development files for %{name}
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
 
 %build
 %cmake .
@@ -50,7 +52,7 @@ ln -sf /usr/bin/ug-client /usr/bin/ug-launcher
 %postun -p /sbin/ldconfig
 
 %files
-%manifest ui-gadget-1.manifest
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_libdir}/*.so.*
 %{_libdir}/lib%{name}-efl-engine.so
@@ -60,6 +62,7 @@ ln -sf /usr/bin/ug-client /usr/bin/ug-launcher
 /opt/etc/smack/accesses.d/ui-gadget-1.rule
 
 %files devel
+%manifest %{name}.manifest
 %defattr(-,root,root,-)
 %{_includedir}/ug-1/*.h
 %{_libdir}/libui-gadget-1.so
