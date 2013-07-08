@@ -1,0 +1,8 @@
+Change-Id: I2cd34c12b1555198a3dd3d590de195697462e251
+Code-Review+2: Ryan Ware <ware@linux.intel.com>
+Verified+1: Ryan Ware <ware@linux.intel.com>
+Submitted-by: Ryan Ware <ware@linux.intel.com>
+Submitted-at: Mon, 08 Jul 2013 10:07:17 -0700
+Reviewed-on: https://review.tizen.org/gerrit/4491
+Project: platform/core/appfw/ui-gadget-1
+Branch: refs/heads/tizen
