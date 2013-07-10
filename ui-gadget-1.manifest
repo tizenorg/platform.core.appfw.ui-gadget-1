@@ -1,5 +1,14 @@
 <manifest>
-	<request>
-		<domain name="_"/>
-	</request>
+        <define>
+                <domain name="ui-gadget"/>
+                <provide>
+                        <label name="ui-gadget::client"/>
+                </provide>
+        </define>
+        <assign>
+                <filesystem path="/usr/bin/ug-client" label="ui-gadget::client" exec_label="ui-gadget::client"/>
+        </assign>
+        <request>
+                <domain name="_"/>
+        </request>
 </manifest>
