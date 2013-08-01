@@ -134,7 +134,7 @@ static void __del_effect_layout(ui_gadget_h ug, ui_gadget_h t_ug)
 	__del_effect_end(ug);
 }
 
-static void __hide_effect_end(ui_gadget_h ug)
+static void __hide_end(ui_gadget_h ug)
 {
 	if (navi) {
 		Elm_Object_Item *t = elm_naviframe_top_item_get(navi);
@@ -149,6 +149,11 @@ static void __hide_effect_end(ui_gadget_h ug)
 	if (ug->layout) {
 		evas_object_hide(ug->layout);
 	}
+}
+
+static void __hide_effect_end(ui_gadget_h ug)
+{
+	__hide_end(ug);
 
 	ug->layout_state = UG_LAYOUT_HIDE;
 }
@@ -191,7 +196,8 @@ static void __on_hideonly_cb(void *data, Evas_Object *obj)
 		return;
 	}
 
-	if (elm_naviframe_top_item_get(navi) == ug->effect_layout) {
+	if ((elm_naviframe_top_item_get(navi) == ug->effect_layout) 
+		&& (ug->layout_state != UG_LAYOUT_NOEFFECT)) {
 		_DBG("\t cb transition add ug=%p", ug);
 		evas_object_smart_callback_add(navi, "transition,finished",
 				__hide_finished, ug);
@@ -199,7 +205,7 @@ static void __on_hideonly_cb(void *data, Evas_Object *obj)
 		ug->layout_state = UG_LAYOUT_HIDEEFFECT;
 	} else {
 		elm_object_item_del(ug->effect_layout);
-		__hide_effect_end(ug);
+		__hide_end(ug);
 	}
 
 	ug->effect_layout = NULL;

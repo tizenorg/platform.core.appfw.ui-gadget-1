@@ -825,6 +825,8 @@ int ugman_ug_del_child(ui_gadget_h ug)
 	}
 
 	ugman_ug_destroy(ug);
+
+	return 0;
 }
 
 int ugman_ug_del_all(void)
