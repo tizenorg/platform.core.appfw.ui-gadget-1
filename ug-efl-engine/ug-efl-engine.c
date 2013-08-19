@@ -36,7 +36,7 @@ static Evas_Object *conform = NULL;
 static void on_show_cb(void *data, Evas *e, Evas_Object *obj, void *event_info);
 static void (*show_end_cb)(void* data) = NULL;
 static void (*hide_end_cb)(void* data) = NULL;
-
+static void __show_finished(void *data, Evas_Object *obj, void *event_info);
 
 static Evas_Object *_get_win_conformant(Evas_Object *win)
 {
@@ -239,9 +239,12 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 
 	if(ug->layout_state == UG_LAYOUT_SHOW) {
 		__del_effect_top_layout(ug);
+	} else if (ug->layout_state == UG_LAYOUT_SHOWEFFECT) {
+		evas_object_smart_callback_del(navi, "transition,finished",
+					__show_finished);
+		__del_effect_top_layout(ug);
 	} else if (ug->layout_state == UG_LAYOUT_HIDE
-		|| ug->layout_state == UG_LAYOUT_NOEFFECT
-		|| ug->layout_state == UG_LAYOUT_SHOWEFFECT) {
+		|| ug->layout_state == UG_LAYOUT_NOEFFECT) {
 		__del_effect_layout(ug, t_ug);
 	} else if (ug->layout_state == UG_LAYOUT_HIDEEFFECT) {
 		;
@@ -330,9 +333,10 @@ static void *on_create(void *win, ui_gadget_h ug,
 	if (con) {
 		conform = con;
 		_DBG("\t There is conformant");
+	} else {
+		_ERR("\t There is no conformant");
+		return NULL;
 	}
-	else
-		_DBG("\t There is NO conformant");
 
 	if (!navi) {
 		navi = elm_naviframe_add(conform);

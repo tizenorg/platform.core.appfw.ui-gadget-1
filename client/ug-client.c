@@ -229,6 +229,8 @@ static Evas_Object *create_win(const char *name)
 		ecore_x_window_size_get(ecore_x_window_root_first_get(),
 					&w, &h);
 		evas_object_resize(eo, w, h);
+
+		elm_win_indicator_mode_set(eo,ELM_WIN_INDICATOR_SHOW);
 	}
 
 	return eo;
@@ -277,6 +279,11 @@ static int lang_changed(void *data)
 	}
 
 	return ug_send_event(UG_EVENT_LANG_CHANGE);
+}
+
+static int region_changed(void *data)
+{
+	return ug_send_event(UG_EVENT_REGION_CHANGE);
 }
 
 static void _home_screen_top_cb(keynode_t* node, void *data)
@@ -352,6 +359,7 @@ static int app_create(void *data)
 	appcore_set_event_callback(APPCORE_EVENT_LOW_MEMORY, low_memory, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LOW_BATTERY, low_battery, ad);
 	appcore_set_event_callback(APPCORE_EVENT_LANG_CHANGE, lang_changed, ad);
+	appcore_set_event_callback(APPCORE_EVENT_REGION_CHANGE, region_changed, ad);
 
 	return 0;
 }
@@ -478,8 +486,6 @@ static int update_argument(const char *optarg, struct appdata *ad)
 		return -1;
 
 	val = optarg + strlen(key) + 1;
-	if (!val)
-		return -1;
 
 	if (!ad->data)
 		ad->data = bundle_create();

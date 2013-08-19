@@ -35,6 +35,11 @@
 #include "ug-engine.h"
 #include "ug-dbg.h"
 
+#define Idle_Cb Ecore_Cb
+
+#define ugman_idler_add(func, data)  \
+	ecore_job_add((Ecore_Cb) func, (void *)data);
+
 struct ug_manager {
 	ui_gadget_h root;
 	ui_gadget_h fv_top;
@@ -276,7 +281,7 @@ static void ugman_ug_start(void *data)
 		_ERR("ug is null");
 		return;
 	} else if (ug->state != UG_STATE_CREATED) {
-		_ERR("ug(%p) state(%d) is error", ug, ug->state);
+		_DBG("start cb will be not invoked because ug(%p) state(%d) is not created", ug, ug->state);
 		return;
 	}
 
@@ -396,6 +401,9 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 
 	_DBG("indicator update opt(%d) cur_state(%d)", opt, cur_state);
 
+#ifndef ENABLE_UG_HANDLE_INDICATOR_HIDE
+	enable = 1;
+#else
 	switch (GET_OPT_INDICATOR_VAL(opt)) {
 		case UG_OPT_INDICATOR_ENABLE:
 			if (event == UG_EVENT_NONE)
@@ -418,11 +426,13 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 			_ERR("update failed: Invalid opt(%d)", opt);
 			return -1;
 	}
+#endif
 
 	if(cur_state != enable) {
 		_DBG("set indicator status as %d", enable);
 		utilx_enable_indicator(ug_man.disp, ug_man.win_id, enable);
 	}
+
 	return 0;
 }
 
@@ -495,6 +505,7 @@ static int ugman_ug_destroy(void *data)
 	ug->state = UG_STATE_DESTROYED;
 
 	if((ug != ug_man.root) && (ug->layout) &&
+		(ug->mode == UG_MODE_FULLVIEW) &&
 		(ug->layout_state != UG_LAYOUT_DESTROY)) {
 		/* ug_destroy_all case */
 		struct ug_engine_ops *eng_ops = NULL;
@@ -523,7 +534,7 @@ static int ugman_ug_destroy(void *data)
 	if((ug->parent) && (ug->parent->state == UG_STATE_PENDING_DESTROY)) {
 		if((ug->parent->children) && (g_slist_length(ug->parent->children) == 1)) {
 			_WRN("pended parent ug(%p) destroy job is added to loop", ug->parent);
-			ecore_idler_add((Ecore_Task_Cb)ugman_ug_destroy, ug->parent);
+			ugman_idler_add((Idle_Cb)ugman_ug_destroy, ug->parent);
 		} else {
 			_WRN("pended parent ug(%p) will be destroyed after another children is destroyed", ug->parent);
 		}
@@ -562,7 +573,7 @@ static void ug_hide_end_cb(void *data)
 		_WRN("child ug is still destroying. parent ug(%p) will be destroyed later", ug);
 		ug->state = UG_STATE_PENDING_DESTROY;
 	} else {
-		ecore_idler_add((Ecore_Task_Cb)ugman_ug_destroy, (void *)ug);
+		ugman_idler_add((Idle_Cb)ugman_ug_destroy, (void *)ug);
 	}
 }
 
@@ -596,6 +607,8 @@ static int ugman_ug_create(void *data)
 		if (ug->mode == UG_MODE_FULLVIEW) {
 			if (eng_ops && eng_ops->create) {
 				ug_man.conform = eng_ops->create(ug_man.win, ug, ugman_ug_start);
+				if(!ug_man.conform)
+					return -1;
 			}
 		}
 		cbs = &ug->cbs;
@@ -653,6 +666,7 @@ int ugman_ug_add(ui_gadget_h parent, ui_gadget_h ug)
 			case UG_STATE_DESTROYED:
 				_WRN("parent(%p) state(%d) error", parent, parent->state);
 				return -1;
+			default:;
 		}
 	}
 
@@ -718,7 +732,8 @@ ui_gadget_h ugman_ug_load(ui_gadget_h parent,
 int ugman_ug_destroying(ui_gadget_h ug)
 {
 	struct ug_module_ops *ops = NULL;
-	GSList *child, *trail;
+
+	_DBG("ugman_ug_destroying");
 
 	ug->destroy_me = 1;
 	ug->state = UG_STATE_DESTROYING;
@@ -790,6 +805,7 @@ int ugman_ug_del(ui_gadget_h ug)
 			}
 		}
 	}
+
 	if((is_update)&&(t)) {
 		ugman_ug_getopt(t);
 	}
@@ -797,14 +813,17 @@ int ugman_ug_del(ui_gadget_h ug)
 	if (ug_man.engine)
 		eng_ops = &ug_man.engine->ops;
 
-	if (eng_ops && eng_ops->destroy)
-		if (ug->mode == UG_MODE_FULLVIEW)
+	if (ug->mode == UG_MODE_FULLVIEW) {
+		if (eng_ops && eng_ops->destroy)
 			eng_ops->destroy(ug, ug_man.fv_top, ug_hide_end_cb);
-		else {
-			eng_ops->destroy(ug, NULL, ug_hide_end_cb);
-		}
-	else
-		ecore_idler_add((Ecore_Task_Cb)ugman_ug_destroy, ug);
+		else
+			ugman_idler_add((Idle_Cb)ugman_ug_destroy, ug);
+	} else {
+		_DBG("ug(%p) mode is frameview", ug);
+		ug_hide_end_cb(ug);
+	}
+
+	_DBG("ugman_ug_del(%p) end", ug);
 
 	return 0;
 }
@@ -855,13 +874,17 @@ int ugman_ug_del_all(void)
 
 int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt)
 {
-	ug_man.is_initted = 1;
 	ug_man.win = win;
 	ug_man.disp = disp;
 	ug_man.win_id = xid;
 	ug_man.base_opt = opt;
 	ug_man.last_rotate_evt = UG_EVENT_NONE;
-	ug_man.engine = ug_engine_load();
+
+	if (!ug_man.is_initted) {
+		ug_man.engine = ug_engine_load();
+	}
+
+	ug_man.is_initted = 1;
 
 	return 0;
 }
@@ -881,7 +904,7 @@ int ugman_resume(void)
 
 	_DBG("ugman_resume called");
 
-	ecore_idler_add((Ecore_Task_Cb)ugman_ug_resume, ug_man.root);
+	ugman_idler_add((Idle_Cb)ugman_ug_resume, ug_man.root);
 
 	return 0;
 }
@@ -901,7 +924,7 @@ int ugman_pause(void)
 
 	_DBG("ugman_pause called");
 
-	ecore_idler_add((Ecore_Task_Cb)ugman_ug_pause, ug_man.root);
+	ugman_idler_add((Idle_Cb)ugman_ug_pause, ug_man.root);
 
 	return 0;
 }
@@ -948,7 +971,7 @@ int ugman_send_event(enum ug_event event)
 		is_rotation = 0;
 	}
 
-	ecore_idler_add((Ecore_Task_Cb)ugman_send_event_pre, (void *)event);
+	ugman_idler_add((Idle_Cb)ugman_send_event_pre, (void *)event);
 
 	if (is_rotation && ug_man.fv_top)
 		ugman_indicator_update(ug_man.fv_top->opt, event);
