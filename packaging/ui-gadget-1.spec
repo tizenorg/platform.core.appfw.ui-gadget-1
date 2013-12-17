@@ -1,3 +1,5 @@
+%bcond_with x
+%bcond_with wayland
 
 Name:       ui-gadget-1
 Summary:    UI Gadget Library
@@ -9,12 +11,14 @@ Source0:    %{name}-%{version}.tar.gz
 Source1001: 	ui-gadget-1.manifest
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
-BuildRequires:  pkgconfig(utilX)
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(appcore-efl)
 BuildRequires:  pkgconfig(bundle)
 BuildRequires:  pkgconfig(dlog)
+%if %{with x}
+BuildRequires:  pkgconfig(utilX)
 BuildRequires:  pkgconfig(x11)
+%endif
 BuildRequires:  pkgconfig(appsvc)
 BuildRequires:  pkgconfig(capi-appfw-application)
 BuildRequires:  pkgconfig(capi-system-runtime-info)
@@ -36,8 +40,15 @@ Development files for %{name}
 %setup -q
 cp %{SOURCE1001} .
 
+%if %{with x}
 %build
-%cmake .
+%cmake . -Dwith_x=TRUE
+%endif
+
+%if %{with wayland} && !%{with x}
+%build
+%cmake . -Dwith_wayland=TRUE
+%endif
 
 make %{?jobs:-j%jobs}
 
