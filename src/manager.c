@@ -24,9 +24,12 @@
 #include <string.h>
 #include <errno.h>
 #include <glib.h>
+
+#ifndef WAYLAND
 #include <utilX.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
+#endif
 
 #include <Ecore.h>
 
@@ -41,8 +44,12 @@ struct ug_manager {
 	GSList *fv_list;
 
 	void *win;
+
+#ifndef WAYLAND
 	Window win_id;
 	Display *disp;
+#endif
+
 	void *conform;
 
 	enum ug_option base_opt;
@@ -110,6 +117,7 @@ static int ug_fvlist_del(ui_gadget_h c)
 	return 0;
 }
 
+#ifndef WAYLAND
 static int __ug_x_get_window_property(Display *dpy, Window win, Atom atom,
 					  Atom type, unsigned int *val,
 					  unsigned int len)
@@ -146,7 +154,9 @@ static int __ug_x_get_window_property(Display *dpy, Window win, Atom atom,
 
 	return num;
 }
+#endif
 
+#ifndef WAYLAND
 static enum ug_event __ug_x_rotation_get(Display *dpy, Window win)
 {
 	Window active_win;
@@ -202,6 +212,7 @@ static enum ug_event __ug_x_rotation_get(Display *dpy, Window win)
 func_out:
 	return func_ret;
 }
+#endif
 
 static void ugman_tree_dump(ui_gadget_h ug)
 {
@@ -382,7 +393,9 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 	int enable;
 	int cur_state;
 
+#ifndef WAYLAND
 	cur_state = utilx_get_indicator_state(ug_man.disp, ug_man.win_id);
+#endif
 
 	_DBG("indicator update opt(%d) cur_state(%d)", opt, cur_state);
 
@@ -411,7 +424,10 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 
 	if(cur_state != enable) {
 		_DBG("set indicator as %d", enable);
+
+#ifndef WAYLAND
 		utilx_enable_indicator(ug_man.disp, ug_man.win_id, enable);
+#endif
 	}
 	return 0;
 }
@@ -586,7 +602,9 @@ static int ugman_ug_create(void *data)
 	}
 
 	if(ug_man.last_rotate_evt == UG_EVENT_NONE) {
+#ifndef WAYLAND
 		ug_man.last_rotate_evt = __ug_x_rotation_get(ug_man.disp, ug_man.win_id);
+#endif
 	}
 	ugman_ug_event(ug, ug_man.last_rotate_evt);
 
@@ -798,6 +816,7 @@ int ugman_ug_del_all(void)
 	return 0;
 }
 
+#ifndef WAYLAND
 int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt)
 {
 	ug_man.is_initted = 1;
@@ -810,6 +829,7 @@ int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt)
 
 	return 0;
 }
+#endif
 
 int ugman_resume(void)
 {
