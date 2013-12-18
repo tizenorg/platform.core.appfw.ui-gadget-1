@@ -26,7 +26,16 @@ SET(SRCS src/ug.c
 
 ADD_LIBRARY(${PROJECT_NAME} SHARED ${SRCS})
 
-PKG_CHECK_MODULES(PKGS REQUIRED glib-2.0 utilX bundle dlog x11 capi-appfw-application appsvc capi-appfw-app-manager ecore)
+SET(PKGS_CHECK_MODULES "glib-2.0 bundle dlog capi-appfw-application appsvc capi-appfw-app-manager ecore")
+IF (with_x)
+       PKG_CHECK_MODULES(PKGS REQUIRED ${PKGS_CHECK_MODULES} utilX x11)
+ENDIF(with_x)
+
+IF (with_wayland)
+       ADD_DEFINITIONS("-DWAYLAND")
+       PKG_CHECK_MODULES(PKGS REQUIRED ${PKGS_CHECK_MODULES})
+ENDIF (with_wayland)
+
 FOREACH(flag ${PKGS_CFLAGS})
 	SET(CFLAGS "${CFLAGS} ${flag}")
 ENDFOREACH(flag)

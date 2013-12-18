@@ -94,6 +94,7 @@ UG_API ui_gadget_h ug_create(ui_gadget_h parent,
 	return ugman_ug_load(parent, name, mode, service, cbs);
 }
 
+#ifndef WAYLAND
 UG_API int ug_init(Display *disp, Window xid, void *win, enum ug_option opt)
 {
 	if (!win || !xid || !disp) {
@@ -108,6 +109,7 @@ UG_API int ug_init(Display *disp, Window xid, void *win, enum ug_option opt)
 
 	return ugman_init(disp, xid, win, opt);
 }
+#endif
 
 UG_API int ug_pause(void)
 {
