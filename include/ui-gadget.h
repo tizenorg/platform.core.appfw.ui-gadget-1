@@ -54,8 +54,10 @@
  * @addtogroup UI_Gadget_For_User
  * @{
  */
-
+#ifndef WAYLAND
 #include <X11/Xlib.h>
+#endif
+
 #include <app.h>
 
 #ifdef __cplusplus
@@ -161,9 +163,11 @@ struct ug_cbs {
  * Easy-to-use macro of ug_init() for EFL
  * @see ug_init()
  */
+#ifndef WAYLAND
 #define UG_INIT_EFL(win, opt) \
 	ug_init((Display *)ecore_x_display_get(), elm_win_xwindow_get(win), \
 		win, opt)
+#endif
 
 /**
  * Easy-to-use macro of ug_init() for GTK
@@ -215,8 +219,9 @@ struct ug_cbs {
  * ...
  * \endcode
  */
+#ifndef WAYLAND
 int ug_init(Display *disp, Window xid, void *win, enum ug_option opt);
-
+#endif
 /**
  * \par Description:
  * This function creates a UI gadget
