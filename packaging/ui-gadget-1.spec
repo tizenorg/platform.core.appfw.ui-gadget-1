@@ -33,6 +33,10 @@ UI gadget library (development headers)
 Summary:    Development files for %{name}
 Group:      Development/Libraries
 Requires:   %{name} = %{version}-%{release}
+%if %{with x}
+Requires:  pkgconfig(x11)
+%endif
+
 %description devel
 Development files for %{name}
 
