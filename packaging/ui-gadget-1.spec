@@ -10,6 +10,7 @@ Source1001: 	ui-gadget-1.manifest
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
 BuildRequires:  pkgconfig(utilX)
+BuildRequires:  pkgconfig(elementary)
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(appcore-efl)
 BuildRequires:  pkgconfig(bundle)

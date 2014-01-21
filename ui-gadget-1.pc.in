@@ -6,6 +6,6 @@ includedir=@INCLUDE_INSTALL_DIR@/ug-1/
 Name: UI Gadget
 Description: UI Gadget Library
 Version: @VERSION@
-Requires: bundle x11 capi-appfw-application
+Requires: bundle @deps@ capi-appfw-application
 Libs: -L${libdir} -lui-gadget-1
 Cflags: -I${includedir}

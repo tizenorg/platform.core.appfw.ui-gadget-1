@@ -22,7 +22,11 @@
 #ifndef __UG_MANAGER_H__
 #define __UG_MANAGER_H__
 
+#ifdef HAVE_X
 #include <utilX.h>
+#endif
+
+#include <Elementary.h>
 #include "ug.h"
 
 int ugman_ug_add(ui_gadget_h parent, ui_gadget_h ug);
@@ -34,7 +38,12 @@ ui_gadget_h ugman_ug_load(ui_gadget_h parent,
 int ugman_ug_del(ui_gadget_h ug);
 int ugman_ug_del_all(void);
 
+#ifdef HAVE_X
 int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt);
+#endif
+
+int ugman_init_efl(Evas_Object *win, enum ug_option opt);
+
 int ugman_resume(void);
 int ugman_pause(void);
 int ugman_send_event(enum ug_event event);

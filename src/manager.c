@@ -24,9 +24,10 @@
 #include <string.h>
 #include <errno.h>
 #include <glib.h>
-#include <utilX.h>
+#ifdef HAVE_X
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
+#endif
 
 #include <Ecore.h>
 
@@ -41,8 +42,10 @@ struct ug_manager {
 	GSList *fv_list;
 
 	void *win;
+#ifdef HAVE_X
 	Window win_id;
 	Display *disp;
+#endif
 	void *conform;
 
 	enum ug_option base_opt;
@@ -110,6 +113,7 @@ static int ug_fvlist_del(ui_gadget_h c)
 	return 0;
 }
 
+#ifdef HAVE_X
 static int __ug_x_get_window_property(Display *dpy, Window win, Atom atom,
 					  Atom type, unsigned int *val,
 					  unsigned int len)
@@ -202,6 +206,7 @@ static enum ug_event __ug_x_rotation_get(Display *dpy, Window win)
 func_out:
 	return func_ret;
 }
+#endif
 
 static void ugman_tree_dump(ui_gadget_h ug)
 {
@@ -380,9 +385,11 @@ static int ugman_indicator_overlap_update(enum ug_option opt)
 static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 {
 	int enable;
-	int cur_state;
+	int cur_state = UG_OPT_INDICATOR_ENABLE;
 
+#ifdef HAVE_X
 	cur_state = utilx_get_indicator_state(ug_man.disp, ug_man.win_id);
+#endif
 
 	_DBG("indicator update opt(%d) cur_state(%d)", opt, cur_state);
 
@@ -411,7 +418,9 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 
 	if(cur_state != enable) {
 		_DBG("set indicator as %d", enable);
+#ifdef HAVE_X
 		utilx_enable_indicator(ug_man.disp, ug_man.win_id, enable);
+#endif
 	}
 	return 0;
 }
@@ -586,7 +595,9 @@ static int ugman_ug_create(void *data)
 	}
 
 	if(ug_man.last_rotate_evt == UG_EVENT_NONE) {
+#ifdef HAVE_X
 		ug_man.last_rotate_evt = __ug_x_rotation_get(ug_man.disp, ug_man.win_id);
+#endif
 	}
 	ugman_ug_event(ug, ug_man.last_rotate_evt);
 
@@ -798,6 +809,7 @@ int ugman_ug_del_all(void)
 	return 0;
 }
 
+#ifdef HAVE_X
 int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt)
 {
 	ug_man.is_initted = 1;
@@ -809,6 +821,17 @@ int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt)
 	ug_man.engine = ug_engine_load();
 
 	return 0;
+}
+#endif
+
+int ugman_init_efl(Evas_Object *win, enum ug_option opt)
+{
+#ifdef HAVE_X
+    Ecore_X_Window xwin = elm_win_xwindow_get(win);
+    if (xwin)
+        return ugman_init((Display *)ecore_x_display_get(), xwin, win, opt);
+#endif
+    return -1;
 }
 
 int ugman_resume(void)

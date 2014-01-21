@@ -24,6 +24,8 @@
 #include <errno.h>
 #include <stdio.h>
 
+#include <Elementary.h>
+
 #include "ug.h"
 #include "ug-module.h"
 #include "ug-manager.h"
@@ -107,6 +109,21 @@ UG_API int ug_init(Display *disp, Window xid, void *win, enum ug_option opt)
 	}
 
 	return ugman_init(disp, xid, win, opt);
+}
+
+UG_API int ug_init_efl(Evas_Object *win, enum ug_option opt)
+{
+	if (!win) {
+		_ERR("ug_init_efl() failed: Invalid arguments");
+		return -1;
+	}
+
+	if (opt < UG_OPT_INDICATOR_ENABLE || opt >= UG_OPT_MAX) {
+		_ERR("ug_init_efl() failed: Invalid option");
+		return -1;
+	}
+
+	return ugman_init_efl(win, opt);
 }
 
 UG_API int ug_pause(void)
