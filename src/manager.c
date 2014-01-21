@@ -833,6 +833,16 @@ int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt)
 }
 #endif
 
+int ugman_init_efl(Evas_Object *win, enum ug_option opt)
+{
+#ifdef HAVE_X
+    Ecore_X_Window xwin = elm_win_xwindow_get(win);
+    if (xwin)
+        return ugman_init((Display *)ecore_x_display_get(), xwin, win, opt);
+#endif
+    return -1;
+}
+
 int ugman_resume(void)
 {
 	/* RESUME */

@@ -26,9 +26,10 @@ SET(SRCS src/ug.c
 
 ADD_LIBRARY(${PROJECT_NAME} SHARED ${SRCS})
 
-SET(PKGS_CHECK_MODULES "glib-2.0 bundle dlog capi-appfw-application appsvc capi-appfw-app-manager ecore")
+SET(PKGS_CHECK_MODULES "glib-2.0 bundle dlog capi-appfw-application appsvc capi-appfw-app-manager ecore elementary")
 IF (with_x)
        PKG_CHECK_MODULES(PKGS REQUIRED ${PKGS_CHECK_MODULES} utilX x11)
+       SET(deps "${deps} x11")
 ENDIF(with_x)
 
 IF (with_wayland)
@@ -53,6 +54,8 @@ INSTALL(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${LIB_INSTALL_D
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/ui-gadget-module.h DESTINATION ${INCLUDE_INSTALL_DIR}/ug-1)
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/ui-gadget-engine.h DESTINATION ${INCLUDE_INSTALL_DIR}/ug-1)
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/ui-gadget.h DESTINATION ${INCLUDE_INSTALL_DIR}/ug-1)
+INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/ui-gadget-efl.h DESTINATION ${INCLUDE_INSTALL_DIR}/ug-1)
+INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/ui-gadget-common.h DESTINATION ${INCLUDE_INSTALL_DIR}/ug-1)
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/SLP_UI_Gadget_PG.h DESTINATION ${INCLUDE_INSTALL_DIR}/ug-1)
 INSTALL(FILES ${CMAKE_SOURCE_DIR}/ui-gadget-1.rule DESTINATION  /opt/etc/smack/accesses.d)
 

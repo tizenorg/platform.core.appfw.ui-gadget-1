@@ -20,6 +20,7 @@ BuildRequires:  pkgconfig(utilX)
 BuildRequires:  pkgconfig(x11)
 %endif
 BuildRequires:  pkgconfig(appsvc)
+BuildRequires:  pkgconfig(elementary)
 BuildRequires:  pkgconfig(capi-appfw-application)
 BuildRequires:  pkgconfig(capi-system-runtime-info)
 BuildRequires:  pkgconfig(capi-appfw-app-manager)
