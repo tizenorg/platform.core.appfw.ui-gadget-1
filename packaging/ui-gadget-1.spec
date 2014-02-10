@@ -25,6 +25,7 @@ BuildRequires:  pkgconfig(capi-system-runtime-info)
 BuildRequires:  pkgconfig(capi-appfw-app-manager)
 BuildRequires:  cmake
 BuildRequires:  edje-bin
+BuildRequires: pkgconfig(libtzplatform-config)
 
 %description
 UI gadget library (development headers)
@@ -46,6 +47,7 @@ cp %{SOURCE1001} .
 
 %build
 %cmake . \
+-DTZ_SYS_ETC=%TZ_SYS_ETC \
 %if %{with wayland} && !%{with x}
 -Dwith_wayland=TRUE
 %else
@@ -60,7 +62,7 @@ rm -rf %{buildroot}
 
 %post 
 /sbin/ldconfig
-ln -sf /usr/bin/ug-client /usr/bin/ug-launcher
+ln -sf %{TZ_SYS_BIN}/ug-client %{TZ_SYS_BIN}/ug-launcher
 
 %postun -p /sbin/ldconfig
 
@@ -72,7 +74,7 @@ ln -sf /usr/bin/ug-client /usr/bin/ug-launcher
 /usr/share/edje/ug_effect.edj
 %{_bindir}/ug-client
 /usr/share/edje/ug-client/*.edj
-/opt/etc/smack/accesses.d/ui-gadget-1.rule
+%{TZ_SYS_ETC}/smack/accesses.d/ui-gadget-1.rule
 
 %files devel
 %manifest %{name}.manifest

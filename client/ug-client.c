@@ -35,9 +35,13 @@
 
 #include "ug-client.h"
 
+#include <tzplatform_config.h>
+
 #ifdef LOG_TAG
 #undef LOG_TAG
 #endif
+
+#define PATH_UG_LAUNCHER tzplatform_mkpath(TZ_SYS_BIN,"ug-launcher")
 
 #define LOG_TAG "UI_GADGET_CLIENT"
 
@@ -439,7 +443,7 @@ int main(int argc, char *argv[])
 
 	cmdlen = strlen(argv[0]);
 	if (strncmp(argv[0], "ug-launcher", cmdlen) == 0
-		|| strncmp(argv[0], "/usr/bin/ug-launcher", cmdlen) == 0) {
+		|| strncmp(argv[0], PATH_UG_LAUNCHER , cmdlen) == 0) {
 		while ((opt = getopt(argc, argv, "n:d:")) != -1) {
 			switch (opt) {
 			case 'n':
