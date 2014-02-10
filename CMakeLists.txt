@@ -26,7 +26,7 @@ SET(SRCS src/ug.c
 
 ADD_LIBRARY(${PROJECT_NAME} SHARED ${SRCS})
 
-SET(PKGS_CHECK_MODULES "glib-2.0 bundle dlog capi-appfw-application appsvc capi-appfw-app-manager ecore")
+SET(PKGS_CHECK_MODULES "glib-2.0 bundle dlog capi-appfw-application appsvc capi-appfw-app-manager ecore libtzplatform-config")
 IF (with_x)
        PKG_CHECK_MODULES(PKGS REQUIRED ${PKGS_CHECK_MODULES} utilX x11)
 ENDIF(with_x)
@@ -54,7 +54,7 @@ INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/ui-gadget-module.h DESTINATION
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/ui-gadget-engine.h DESTINATION ${INCLUDE_INSTALL_DIR}/ug-1)
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/ui-gadget.h DESTINATION ${INCLUDE_INSTALL_DIR}/ug-1)
 INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/SLP_UI_Gadget_PG.h DESTINATION ${INCLUDE_INSTALL_DIR}/ug-1)
-INSTALL(FILES ${CMAKE_SOURCE_DIR}/ui-gadget-1.rule DESTINATION  /opt/etc/smack/accesses.d)
+INSTALL(FILES ${CMAKE_SOURCE_DIR}/ui-gadget-1.rule DESTINATION  ${TZ_SYS_ETC}/smack/accesses.d)
 
 ADD_SUBDIRECTORY(ug-efl-engine)
 ADD_SUBDIRECTORY(client)

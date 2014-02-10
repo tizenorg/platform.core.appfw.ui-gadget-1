@@ -33,6 +33,8 @@
 #include "ug-module.h"
 #include "ug-dbg.h"
 
+#include <tzplatform_config.h>
+
 #define UG_MODULE_INIT_SYM "UG_MODULE_INIT"
 #define UG_MODULE_EXIT_SYM "UG_MODULE_EXIT"
 
@@ -66,10 +68,10 @@ struct ug_module *ug_module_load(const char *name)
 
 	do {
 		if (pkg_name) {
-			snprintf(ug_file, PATH_MAX, "/usr/apps/%s/lib/libug-%s.so", pkg_name, name);
+			snprintf(ug_file, PATH_MAX, "%s/%s/lib/libug-%s.so", tzplatform_getenv(TZ_SYS_RO_APP), pkg_name, name);
 			if (file_exist(ug_file))
 				break;
-			snprintf(ug_file, PATH_MAX, "/opt/apps/%s/lib/libug-%s.so", pkg_name, name);
+			snprintf(ug_file, PATH_MAX, "%s/%s/lib/libug-%s.so", tzplatform_getenv(TZ_SYS_RO_APP), pkg_name, name);
 			if (file_exist(ug_file))
 				break;
 		}
