@@ -21,8 +21,7 @@
 
 #include <stdio.h>
 #include <appcore-efl.h>
-#include <ui-gadget.h>
-#include <Ecore_X.h>
+#include <ui-gadget-efl.h>
 #include <dlog.h>
 #include <aul.h>
 #include <appsvc.h>
@@ -31,7 +30,6 @@
 
 #include "ug-client.h"
 
-#include <Ecore_X.h>
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -191,9 +189,6 @@ static Evas_Object *create_win(const char *name)
 					       win_del, NULL);
 		/* disable destktop mode
 		evas_object_smart_callback_add(eo, "profile,changed", profile_changed_cb, NULL); */
-		ecore_x_window_size_get(ecore_x_window_root_first_get(),
-					&w, &h);
-		evas_object_resize(eo, w, h);
 	}
 
 	return eo;

@@ -23,7 +23,7 @@
 #define __UG_CLIENT_H__
 
 #include <Elementary.h>
-#include <ui-gadget.h>
+#include <ui-gadget-efl.h>
 #include <bundle.h>
 
 #if !defined(PACKAGE)

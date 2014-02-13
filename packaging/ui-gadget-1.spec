@@ -1,4 +1,4 @@
-
+%bcond_with x
 Name:       ui-gadget-1
 Summary:    UI Gadget Library
 Version:    0.1.25
@@ -9,13 +9,15 @@ Source0:    %{name}-%{version}.tar.gz
 Source1001: 	ui-gadget-1.manifest
 Requires(post): /sbin/ldconfig
 Requires(postun): /sbin/ldconfig
+%if %{with x}
 BuildRequires:  pkgconfig(utilX)
+BuildRequires:  pkgconfig(x11)
+%endif
 BuildRequires:  pkgconfig(elementary)
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(appcore-efl)
 BuildRequires:  pkgconfig(bundle)
 BuildRequires:  pkgconfig(dlog)
-BuildRequires:  pkgconfig(x11)
 BuildRequires:  pkgconfig(appsvc)
 BuildRequires:  pkgconfig(capi-appfw-application)
 BuildRequires:  pkgconfig(capi-system-runtime-info)

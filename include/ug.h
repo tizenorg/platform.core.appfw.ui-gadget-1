@@ -24,7 +24,7 @@
 
 #include <bundle.h>
 #include "ug-module.h"
-#include "ui-gadget.h"
+#include "ui-gadget-efl.h"
 
 struct ug_child;
 

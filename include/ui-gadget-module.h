@@ -38,7 +38,7 @@
  * @{
  */
 
-#include "ui-gadget.h"
+#include "ui-gadget-efl.h"
 
 #ifdef __cplusplus
 extern "C" {

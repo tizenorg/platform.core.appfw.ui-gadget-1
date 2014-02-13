@@ -13,12 +13,10 @@ PKG_CHECK_MODULES(CLIENT_PKGS REQUIRED
 	appcore-efl
 	appsvc
 	bundle
-	ecore-x
 	edje
 	dlog
 	elementary
-	evas
-	x11)
+	evas)
 
 FOREACH(flag ${CLIENT_PKGS_CFLAGS})
 	SET(CLIENT_CFLAGS "${CLIENT_CFLAGS} ${flag}")

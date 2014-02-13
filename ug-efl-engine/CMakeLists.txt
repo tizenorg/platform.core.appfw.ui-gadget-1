@@ -8,7 +8,6 @@ PKG_CHECK_MODULES(UG_EFL_ENGINE_PKGS REQUIRED
 	dlog
 	elementary
 	ecore
-	ecore-x
 	edje
 	capi-appfw-application
 	evas)
