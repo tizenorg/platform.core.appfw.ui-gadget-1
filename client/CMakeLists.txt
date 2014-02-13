@@ -7,15 +7,18 @@ SET(CLIENT_LOCALEDIR /usr/share/locale)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 INCLUDE(FindPkgConfig)
-SET(CLIENT_PKGS_CHECK_MODULES "capi-appfw-application capi-system-runtime-info appcore-efl appsvc bundle edje dlog elementary evas")
-
-IF (with_x)
-       PKG_CHECK_MODULES(CLIENT_PKGS REQUIRED ${CLIENT_PKGS_CHECK_MODULES} ecore-x x11)
-ENDIF(with_x)
-
-IF (with_wayland)
-       PKG_CHECK_MODULES(CLIENT_PKGS REQUIRED ${CLIENT_PKGS_CHECK_MODULES})
-ENDIF(with_wayland)
+PKG_CHECK_MODULES(CLIENT_PKGS REQUIRED
+	capi-appfw-application
+	capi-system-runtime-info
+	appcore-efl
+	appsvc
+	bundle
+	ecore-x
+	edje
+	dlog
+	elementary
+	evas
+	x11)
 
 FOREACH(flag ${CLIENT_PKGS_CFLAGS})
 	SET(CLIENT_CFLAGS "${CLIENT_CFLAGS} ${flag}")

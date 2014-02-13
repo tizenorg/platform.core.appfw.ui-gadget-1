@@ -22,11 +22,7 @@
 #include <stdio.h>
 #include <appcore-efl.h>
 #include <ui-gadget.h>
-
-#ifndef WAYLAND
 #include <Ecore_X.h>
-#endif
-
 #include <dlog.h>
 #include <aul.h>
 #include <appsvc.h>
@@ -34,6 +30,8 @@
 #include <runtime_info.h>
 
 #include "ug-client.h"
+
+#include <Ecore_X.h>
 
 #ifdef LOG_TAG
 #undef LOG_TAG
@@ -182,7 +180,6 @@ static void profile_changed_cb(void *data, Evas_Object * obj, void *event)
 
 static Evas_Object *create_win(const char *name)
 {
-	Ecore_Evas *ee;
 	Evas_Object *eo;
 	int w, h;
 
@@ -194,8 +191,8 @@ static Evas_Object *create_win(const char *name)
 					       win_del, NULL);
 		/* disable destktop mode
 		evas_object_smart_callback_add(eo, "profile,changed", profile_changed_cb, NULL); */
-		ee = ecore_evas_ecore_evas_get(evas_object_evas_get(eo));
-		evas_output_size_get(ee, &w, &h);
+		ecore_x_window_size_get(ecore_x_window_root_first_get(),
+					&w, &h);
 		evas_object_resize(eo, w, h);
 	}
 
@@ -250,10 +247,7 @@ static int app_create(void *data)
 	if (win == NULL)
 		return -1;
 	ad->win = win;
-
-#ifndef WAYLAND
 	UG_INIT_EFL(ad->win, UG_OPT_INDICATOR_ENABLE);
-#endif
 
 	bg = elm_bg_add(win);
 	evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
@@ -364,7 +358,6 @@ static int app_reset(bundle *b, void *data)
 	Ecore_X_Window id2 = elm_win_xwindow_get(ad->win);
 
 	ret = appsvc_request_transient_app(b, id2, svc_cb, "svc test");
-
 	if (ret)
 		LOGD("fail to request transient app: return value(%d)", ret);
 	else

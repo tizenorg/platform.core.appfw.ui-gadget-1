@@ -3,18 +3,15 @@ SET(UG_EFL_ENGINE_SRCS ug-efl-engine.c)
 SET(UG_ENGINE_EDJ_DIR "${CMAKE_INSTALL_PREFIX}/share/edje")
 SET(VERSION_MAJOR 0)
 SET(VERSION "${VERSION_MAJOR}.1.0")
-SET(UG_EFL_ENGINE_PKGS_CHECK_MODULES "dlog elementary ecore edje capi-appfw-application evas")
 
-IF (with_x)
-        PKG_CHECK_MODULES(UG_EFL_ENGINE_PKGS REQUIRED
-	${UG_EFL_ENGINE_PKGS_CHECK_MODULES}
-	ecore-x)
-ENDIF(with_x)
-
-IF (with_wayland)
-        PKG_CHECK_MODULES(UG_EFL_ENGINE_PKGS REQUIRED
-	${UG_EFL_ENGINE_PKGS_CHECK_MODULES})
-ENDIF(with_wayland)
+PKG_CHECK_MODULES(UG_EFL_ENGINE_PKGS REQUIRED
+	dlog
+	elementary
+	ecore
+	ecore-x
+	edje
+	capi-appfw-application
+	evas)
 
 FOREACH(flag ${UG_EFL_ENGINE_PKGS_CFLAGS})
 	SET(UG_EFL_ENGINE_CFLAGS "${UG_EFL_ENGINE_CFLAGS} ${flag}")
