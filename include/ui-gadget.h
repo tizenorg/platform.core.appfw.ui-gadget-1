@@ -58,6 +58,7 @@
 #include <X11/Xlib.h>
 #endif
 
+#include <Evas.h>
 #include <app.h>
 
 #ifdef __cplusplus
@@ -163,11 +164,8 @@ struct ug_cbs {
  * Easy-to-use macro of ug_init() for EFL
  * @see ug_init()
  */
-#ifndef WAYLAND
 #define UG_INIT_EFL(win, opt) \
-	ug_init((Display *)ecore_x_display_get(), elm_win_xwindow_get(win), \
-		win, opt)
-#endif
+    ug_init_efl(win, opt)
 
 /**
  * Easy-to-use macro of ug_init() for GTK
@@ -222,6 +220,35 @@ struct ug_cbs {
 #ifndef WAYLAND
 int ug_init(Display *disp, Window xid, void *win, enum ug_option opt);
 #endif
+
+/**
+ * \par Description:
+ * This function initializes default window and indicator state.
+ *
+ * @param[in] win A pointer to window evas object.
+ * @param[in] opt Default indicator state to restore application's indicator state
+ * @return 0 on success, -1 on error
+ *
+ * \pre None
+ * \post None
+ * \see UG_INIT_EFL()
+ * \remarks None
+ *
+ * \par Sample code:
+ * \code
+ * #include <ui-gadget.h>
+ * ...
+ * Evas_Object *win;
+ * ...
+ * // create window
+ * ...
+ * ug_init_efl(win, UG_OPT_INDICATOR_ENABLE);
+ * // for convenience you can use following macro: ELM_INIT_EFL(win, UG_OPT_INDICATOR_ENABLE);
+ * ...
+ * \endcode
+ */
+int ug_init_efl(Evas_Object *win, enum ug_option opt);
+
 /**
  * \par Description:
  * This function creates a UI gadget
