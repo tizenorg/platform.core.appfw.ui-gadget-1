@@ -29,6 +29,7 @@
 #include <utilX.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
+#include <Ecore_X.h>
 #endif
 
 #include <Ecore.h>
@@ -832,6 +833,16 @@ int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt)
 	return 0;
 }
 #endif
+
+int ugman_init_efl(Evas_Object *win, enum ug_option opt)
+{
+#ifndef WAYLAND
+    Ecore_X_Window xwin = elm_win_xwindow_get(win);
+    if (xwin)
+        return ugman_init((Display *)ecore_x_display_get(), xwin, win, opt);
+#endif
+    return -1;
+}
 
 int ugman_resume(void)
 {
