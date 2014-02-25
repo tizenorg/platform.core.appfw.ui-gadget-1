@@ -131,7 +131,7 @@ enum ug_option {
 			/**< Indicator option:
 			Indicator will be handled manually */
 	UG_OPT_OVERLAP_ENABLE = 0x08,
-			/**< Overlap option: Enable indicator overlap  */
+			/**< Overlap option: Enable indicator overlap  */		
 	UG_OPT_MAX
 };
 

@@ -3,7 +3,7 @@
 
 Name:       ui-gadget-1
 Summary:    UI Gadget Library
-Version:    0.1.25
+Version:    0.1.30
 Release:    1
 Group:      System/Libraries
 License:    Apache License, Version 2.0
@@ -21,8 +21,8 @@ BuildRequires:  pkgconfig(x11)
 %endif
 BuildRequires:  pkgconfig(appsvc)
 BuildRequires:  pkgconfig(capi-appfw-application)
-BuildRequires:  pkgconfig(capi-system-runtime-info)
 BuildRequires:  pkgconfig(capi-appfw-app-manager)
+BuildRequires:  pkgconfig(vconf)
 BuildRequires:  cmake
 BuildRequires:  edje-bin
 BuildRequires: pkgconfig(libtzplatform-config)
@@ -59,8 +59,10 @@ make %{?jobs:-j%jobs}
 %install
 rm -rf %{buildroot}
 %make_install
+mkdir -p %{buildroot}/usr/share/license
+install LICENSE %{buildroot}/usr/share/license/%{name}
 
-%post 
+%post
 /sbin/ldconfig
 ln -sf %{TZ_SYS_BIN}/ug-client %{TZ_SYS_BIN}/ug-launcher
 
@@ -75,6 +77,7 @@ ln -sf %{TZ_SYS_BIN}/ug-client %{TZ_SYS_BIN}/ug-launcher
 %{_bindir}/ug-client
 /usr/share/edje/ug-client/*.edj
 %{TZ_SYS_ETC}/smack/accesses.d/ui-gadget-1.rule
+/usr/share/license/%{name}
 
 %files devel
 %manifest %{name}.manifest

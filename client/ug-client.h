@@ -48,7 +48,7 @@ struct appdata {
 	Evas_Object *conform;
 
 	ui_gadget_h ug;
-	const char *name;
+	char *name;
 	int is_frameview;
 	int is_transient;
 
