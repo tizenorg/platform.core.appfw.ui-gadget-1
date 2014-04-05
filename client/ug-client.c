@@ -321,9 +321,7 @@ static int app_create(void *data)
 		return -1;
 	ad->win = win;
 
-#ifndef WAYLAND
 	UG_INIT_EFL(ad->win, UG_OPT_INDICATOR_ENABLE);
-#endif
 
 	bg = elm_bg_add(win);
 	evas_object_size_hint_weight_set(bg, EVAS_HINT_EXPAND, EVAS_HINT_EXPAND);
