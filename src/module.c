@@ -138,13 +138,13 @@ struct ug_module *ug_module_load(const char *name)
 			if (file_exist(ug_file))
 				break;
 		}
-		snprintf(ug_file, PATH_MAX, "/usr/ug/lib/libug-%s.so", name);
+		snprintf(ug_file, PATH_MAX, "%s/lib/libug-%s.so", tzplatform_getenv(TZ_SYS_RO_UG), name);
 		if (file_exist(ug_file))
 			break;
-		snprintf(ug_file, PATH_MAX, "/opt/ug/lib/libug-%s.so", name);
+		snprintf(ug_file, PATH_MAX, "%s/lib/libug-%s.so", tzplatform_getenv(TZ_SYS_RW_UG), name);
 		if (file_exist(ug_file))
 			break;
-		snprintf(ug_file, PATH_MAX, "/opt/usr/ug/lib/libug-%s.so", name);
+		snprintf(ug_file, PATH_MAX, "%s/lib/libug-%s.so", tzplatform_getenv(TZ_USER_UG), name);
 		if (file_exist(ug_file))
 			break;
 	} while (0);
@@ -221,17 +221,17 @@ int ug_exist(const char* name)
 	int ret = 0;
 
 	do {
-		snprintf(ug_file, PATH_MAX, "/usr/ug/lib/libug-%s.so", name);
+		snprintf(ug_file, PATH_MAX, "%s/lib/libug-%s.so", tzplatform_getenv(TZ_SYS_RO_UG), name);
 		if (file_exist(ug_file)) {
 			ret = 1;
 			break;
 		}
-		snprintf(ug_file, PATH_MAX, "/opt/ug/lib/libug-%s.so", name);
+		snprintf(ug_file, PATH_MAX, "%s/lib/libug-%s.so", tzplatform_getenv(TZ_SYS_RW_UG), name);
 		if (file_exist(ug_file)) {
 			ret = 1;
 			break;
 		}
-		snprintf(ug_file, PATH_MAX, "/opt/usr/ug/lib/libug-%s.so", name);
+		snprintf(ug_file, PATH_MAX, "%s/lib/libug-%s.so", tzplatform_getenv(TZ_USER_UG), name);
 		if (file_exist(ug_file)) {
 			ret = 1;
 			break;
