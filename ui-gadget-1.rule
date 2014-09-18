@@ -34,7 +34,6 @@ ui-gadget::client org.tizen.email::db rw---
 ui-gadget::client org.tizen.setting::default-resources r-x--
 ui-gadget::client xorg::screencapture r----
 ui-gadget::client ug_bluetooth r-x--
-ui-gadget::client syspopup::db rwx--
 ui-gadget::client bt-service::admin -w---
 ui-gadget::client bt-service::gap -w---
 ui-gadget::client bt-service::manager -w---
