@@ -301,7 +301,7 @@ static void _home_screen_top_cb(keynode_t* node, void *data)
 		return;
 	}
 
-	if ((node->value.i == VCONFKEY_IDLE_SCREEN_TOP_TRUE) && (!ad->is_transient)) {
+	if ((vconf_keynode_get_int(node) == VCONFKEY_IDLE_SCREEN_TOP_TRUE) && (!ad->is_transient)) {
 		LOGW("home key pressed. window is not transient. ug client will be terminated");
 		elm_exit();
 	}
