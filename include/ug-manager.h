@@ -22,10 +22,6 @@
 #ifndef __UG_MANAGER_H__
 #define __UG_MANAGER_H__
 
-#ifndef WAYLAND
-#include <utilX.h>
-#endif
-
 #include <Evas.h>
 #include "ug.h"
 

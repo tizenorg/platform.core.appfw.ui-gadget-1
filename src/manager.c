@@ -26,7 +26,6 @@
 #include <glib.h>
 
 #ifndef WAYLAND
-#include <utilX.h>
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
 #include <Ecore_X.h>
@@ -406,50 +405,7 @@ static int ugman_indicator_overlap_update(enum ug_option opt)
 
 static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 {
-	int enable;
-	int cur_state;
-
-#ifndef WAYLAND
-	cur_state = utilx_get_indicator_state(ug_man.disp, ug_man.win_id);
-#else
-	cur_state = -1; //state is -1 (unknown)
-#endif
-
-	_DBG("indicator update opt(%d) cur_state(%d)", opt, cur_state);
-
-#ifndef ENABLE_UG_HANDLE_INDICATOR_HIDE
-	enable = 1;
-#else
-	switch (GET_OPT_INDICATOR_VAL(opt)) {
-		case UG_OPT_INDICATOR_ENABLE:
-			if (event == UG_EVENT_NONE)
-				enable = 1;
-			else
-				enable = cur_state ? 1 : 0;
-			break;
-		case UG_OPT_INDICATOR_PORTRAIT_ONLY:
-			enable = ug_man.is_landscape ? 0 : 1;
-			break;
-		case UG_OPT_INDICATOR_LANDSCAPE_ONLY:
-			enable = ug_man.is_landscape ? 1 : 0;
-			break;
-		case UG_OPT_INDICATOR_DISABLE:
-			enable = 0;
-			break;
-		case UG_OPT_INDICATOR_MANUAL:
-			return 0;
-		default:
-			_ERR("update failed: Invalid opt(%d)", opt);
-			return -1;
-	}
-#endif
-
-	if(cur_state != enable) {
-		_DBG("set indicator as %d", enable);
-#ifndef WAYLAND
-		utilx_enable_indicator(ug_man.disp, ug_man.win_id, enable);
-#endif
-	}
+	_ERR("controlling indicator is disabled");
 
 	return 0;
 }

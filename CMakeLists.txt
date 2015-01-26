@@ -28,7 +28,7 @@ ADD_LIBRARY(${PROJECT_NAME} SHARED ${SRCS})
 
 SET(PKGS_CHECK_MODULES "glib-2.0 bundle dlog capi-appfw-application appsvc capi-appfw-app-manager ecore elementary libtzplatform-config")
 IF (with_x)
-       PKG_CHECK_MODULES(PKGS REQUIRED ${PKGS_CHECK_MODULES} utilX x11)
+       PKG_CHECK_MODULES(PKGS REQUIRED ${PKGS_CHECK_MODULES} x11)
 ENDIF(with_x)
 
 IF (with_wayland)

@@ -16,7 +16,6 @@ BuildRequires:  pkgconfig(appcore-efl)
 BuildRequires:  pkgconfig(bundle)
 BuildRequires:  pkgconfig(dlog)
 %if %{with x}
-BuildRequires:  pkgconfig(utilX)
 BuildRequires:  pkgconfig(x11)
 %endif
 BuildRequires:  pkgconfig(appsvc)
