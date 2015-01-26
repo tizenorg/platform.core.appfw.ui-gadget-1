@@ -406,6 +406,7 @@ static int ugman_indicator_overlap_update(enum ug_option opt)
 
 static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 {
+#if 0	//utilx_xx_indicator_xxx api has been deprecated
 	int enable;
 	int cur_state;
 
@@ -450,7 +451,7 @@ static int ugman_indicator_update(enum ug_option opt, enum ug_event event)
 		utilx_enable_indicator(ug_man.disp, ug_man.win_id, enable);
 #endif
 	}
-
+#endif
 	return 0;
 }
 
