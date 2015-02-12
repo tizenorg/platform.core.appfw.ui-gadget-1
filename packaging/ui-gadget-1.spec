@@ -76,7 +76,6 @@ ln -sf %{TZ_SYS_BIN}/ug-client %{TZ_SYS_BIN}/ug-launcher
 /usr/share/edje/ug_effect.edj
 %{_bindir}/ug-client
 /usr/share/edje/ug-client/*.edj
-%{TZ_SYS_ETC}/smack/accesses.d/ui-gadget-1.rule
 /usr/share/license/%{name}
 
 %files devel
