@@ -127,7 +127,7 @@ struct ug_module *ug_module_load(const char *name)
 		return NULL;
 	}
 
-	app_manager_get_package(getpid(), &pkg_name);
+	app_manager_get_app_id(getpid(), &pkg_name);
 
 	do {
 		if (pkg_name) {
