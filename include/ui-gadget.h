@@ -219,6 +219,8 @@ struct ug_cbs {
  */
 #ifndef WAYLAND
 int ug_init(Display *disp, Window xid, void *win, enum ug_option opt);
+#else
+int ug_init(void *win, enum ug_option opt);
 #endif
 
 /**

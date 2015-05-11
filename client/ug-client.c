@@ -23,10 +23,6 @@
 #include <appcore-efl.h>
 #include <ui-gadget.h>
 
-#ifndef WAYLAND
-#include <Ecore_X.h>
-#endif
-
 #include <dlog.h>
 #include <aul.h>
 #include <app.h>

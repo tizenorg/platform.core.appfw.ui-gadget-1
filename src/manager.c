@@ -865,6 +865,21 @@ int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt)
 
 	return 0;
 }
+#else
+int ugman_init(void *win, enum ug_option opt)
+{
+	ug_man.win = win;
+	ug_man.base_opt = opt;
+	ug_man.last_rotate_evt = UG_EVENT_NONE;
+
+	if (!ug_man.is_initted) {
+		ug_man.engine = ug_engine_load();
+	}
+
+	ug_man.is_initted = 1;
+
+	return 0;
+}
 #endif
 
 int ugman_init_efl(Evas_Object *win, enum ug_option opt)
@@ -873,6 +888,8 @@ int ugman_init_efl(Evas_Object *win, enum ug_option opt)
     Ecore_X_Window xwin = elm_win_xwindow_get(win);
     if (xwin)
         return ugman_init((Display *)ecore_x_display_get(), xwin, win, opt);
+#else
+     return ugman_init(win, opt);
 #endif
     return -1;
 }

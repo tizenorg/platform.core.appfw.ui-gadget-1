@@ -36,6 +36,8 @@ int ugman_ug_del_all(void);
 
 #ifndef WAYLAND
 int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt);
+#else
+int ugman_init(void *win, enum ug_option opt);
 #endif
 
 int ugman_init_efl(Evas_Object *win, enum ug_option opt);
