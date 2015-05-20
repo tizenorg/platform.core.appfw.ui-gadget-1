@@ -6,7 +6,7 @@ Summary:    UI Gadget Library
 Version:    0.1.30
 Release:    1
 Group:      System/Libraries
-License:    Apache License, Version 2.0
+License:    Apache-2.0
 Source0:    %{name}-%{version}.tar.gz
 Source1001: 	ui-gadget-1.manifest
 Requires(post): /sbin/ldconfig
