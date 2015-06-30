@@ -25,7 +25,7 @@
 #include <errno.h>
 #include <glib.h>
 
-#ifndef WAYLAND
+#ifndef UG_WAYLAND
 #include <X11/Xatom.h>
 #include <X11/Xutil.h>
 #include <Ecore_X.h>
@@ -50,7 +50,7 @@ struct ug_manager {
 
 	void *win;
 
-#ifndef WAYLAND
+#ifndef UG_WAYLAND
 	Window win_id;
 	Display *disp;
 #endif
@@ -129,7 +129,7 @@ static int ug_fvlist_del(ui_gadget_h c)
 	return 0;
 }
 
-#ifndef WAYLAND
+#ifndef UG_WAYLAND
 static int __ug_x_get_window_property(Display *dpy, Window win, Atom atom,
 					  Atom type, unsigned int *val,
 					  unsigned int len)
@@ -168,7 +168,7 @@ static int __ug_x_get_window_property(Display *dpy, Window win, Atom atom,
 }
 #endif
 
-#ifndef WAYLAND
+#ifndef UG_WAYLAND
 static enum ug_event __ug_x_rotation_get(Display *dpy, Window win)
 {
 	Window active_win;
@@ -595,7 +595,7 @@ static int ugman_ug_create(void *data)
 	}
 
 	if(ug_man.last_rotate_evt == UG_EVENT_NONE) {
-#ifndef WAYLAND
+#ifndef UG_WAYLAND
 		ug_man.last_rotate_evt = __ug_x_rotation_get(ug_man.disp, ug_man.win_id);
 #endif
 	}
@@ -848,7 +848,7 @@ int ugman_ug_del_all(void)
 	return 0;
 }
 
-#ifndef WAYLAND
+#ifndef UG_WAYLAND
 int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt)
 {
 	ug_man.win = win;
@@ -884,7 +884,7 @@ int ugman_init(void *win, enum ug_option opt)
 
 int ugman_init_efl(Evas_Object *win, enum ug_option opt)
 {
-#ifndef WAYLAND
+#ifndef UG_WAYLAND
     Ecore_X_Window xwin = elm_win_xwindow_get(win);
     if (xwin)
         return ugman_init((Display *)ecore_x_display_get(), xwin, win, opt);

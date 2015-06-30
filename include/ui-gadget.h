@@ -54,7 +54,7 @@
  * @addtogroup UI_Gadget_For_User
  * @{
  */
-#ifndef WAYLAND
+#ifndef UG_WAYLAND
 #include <X11/Xlib.h>
 #endif
 
@@ -217,7 +217,7 @@ struct ug_cbs {
  * ...
  * \endcode
  */
-#ifndef WAYLAND
+#ifndef UG_WAYLAND
 int ug_init(Display *disp, Window xid, void *win, enum ug_option opt);
 #else
 int ug_init(void *win, enum ug_option opt);

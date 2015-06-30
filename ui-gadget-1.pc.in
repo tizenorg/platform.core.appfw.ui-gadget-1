@@ -8,4 +8,4 @@ Description: UI Gadget Library
 Version: @VERSION@
 Requires: bundle capi-appfw-application
 Libs: -L${libdir} -lui-gadget-1
-Cflags: -I${includedir}
+Cflags: -I${includedir} @UG_FLAG@
