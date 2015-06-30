@@ -32,7 +32,7 @@ IF (with_x)
 ENDIF(with_x)
 
 IF (with_wayland)
-       ADD_DEFINITIONS("-DWAYLAND")
+       ADD_DEFINITIONS("-DUG_WAYLAND")
        PKG_CHECK_MODULES(PKGS REQUIRED ${PKGS_CHECK_MODULES})
 ENDIF (with_wayland)
 

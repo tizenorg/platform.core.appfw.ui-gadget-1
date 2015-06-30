@@ -34,7 +34,7 @@ ui_gadget_h ugman_ug_load(ui_gadget_h parent,
 int ugman_ug_del(ui_gadget_h ug);
 int ugman_ug_del_all(void);
 
-#ifndef WAYLAND
+#ifndef UG_WAYLAND
 int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt);
 #else
 int ugman_init(void *win, enum ug_option opt);
