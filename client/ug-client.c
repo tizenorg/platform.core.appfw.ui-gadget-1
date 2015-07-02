@@ -27,6 +27,8 @@
 #include <aul.h>
 #include <app.h>
 #include <vconf.h>
+#include <dbus/dbus.h>
+#include <dbus/dbus-glib-lowlevel.h>
 
 #include "ug-client.h"
 
@@ -39,6 +41,11 @@
 #define PATH_UG_LAUNCHER tzplatform_mkpath(TZ_SYS_BIN,"ug-launcher")
 
 #define LOG_TAG "UI_GADGET_CLIENT"
+
+static int home_screen_pid = 0;
+static DBusConnection *bus;
+static int ug_dbus_signal_handler_initialized = 0;
+static bool is_app_pause = false;
 
 static void prt_usage(const char *cmd)
 {
@@ -288,21 +295,6 @@ static int region_changed(void *data)
 	return ug_send_event(UG_EVENT_REGION_CHANGE);
 }
 
-static void _home_screen_top_cb(keynode_t* node, void *data)
-{
-	struct appdata *ad = data;
-
-	if (!node) {
-		LOGE("home screen top cb node value is null");
-		return;
-	}
-
-	if ((vconf_keynode_get_int(node) == VCONFKEY_IDLE_SCREEN_TOP_TRUE) && (!ad->is_transient)) {
-		LOGW("home key pressed. window is not transient. ug client will be terminated");
-		elm_exit();
-	}
-}
-
 static int app_create(void *data)
 {
 	struct appdata *ad = data;
@@ -369,11 +361,159 @@ static int app_create(void *data)
 	return 0;
 }
 
+static void _ug_client_home_screen_top_cb(void *data)
+{
+	struct appdata *ad = data;
+
+	if((!ad->is_transient) && (home_screen_pid)) {
+		LOGW("home key pressed. window is not transient. ug client will be terminated");
+		elm_exit();
+	}
+	return;
+}
+
+static DBusHandlerResult
+_ug_client_dbus_signal_filter(DBusConnection *conn, DBusMessage *message,
+		void *user_data)
+{
+	const char *sender;
+	const char *interface;
+	int home_pid_by_dbus;
+
+	DBusError error;
+
+	dbus_error_init(&error);
+
+	sender = dbus_message_get_sender(message);
+	if (sender == NULL)
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	if (dbus_bus_get_unix_user(conn, sender, &error) != 0) {
+		LOGW("reject by security issue - no allowed sender\n");
+		dbus_error_free(&error);
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	}
+
+	interface = dbus_message_get_interface(message);
+	if (interface == NULL) {
+		LOGW("reject by security issue - no interface\n");
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+	}
+
+	if (dbus_message_is_signal(
+				message, interface, "home_launch")) {
+
+		LOGD("interface signal is home_launch");
+
+		if (dbus_message_get_args(message, &error, DBUS_TYPE_UINT32,
+					&home_pid_by_dbus, DBUS_TYPE_INVALID) == FALSE) {
+			LOGW("Failed to get data: %s", error.message);
+			dbus_error_free(&error);
+			return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+		}
+
+		LOGD("pid : %d", home_pid_by_dbus);
+
+		home_screen_pid = home_pid_by_dbus;
+
+		if(is_app_pause) {
+			LOGD("home_launch signal under app_pause.\
+					if home screen is top, app will be terminated");
+			_ug_client_home_screen_top_cb(user_data);
+		}
+	}
+
+	return DBUS_HANDLER_RESULT_HANDLED;
+}
+
+static int _ug_client_dbus_listen_signal(void *data)
+{
+	DBusError error;
+	char rule[128];
+
+	if (ug_dbus_signal_handler_initialized)
+		return 0;
+
+	dbus_threads_init_default();
+
+	dbus_error_init(&error);
+	bus = dbus_bus_get_private(DBUS_BUS_SYSTEM, &error);
+	if (!bus) {
+		LOGW("Failed to connect to the D-BUS daemon: %s", error.message);
+		dbus_error_free(&error);
+		return -1;
+	}
+	dbus_connection_setup_with_g_main(bus, NULL);
+
+	snprintf(rule, 128,
+			"path='%s',type='signal',interface='%s'", "/aul/dbus_handler",
+			"org.tizen.aul.signal");
+	/* listening to messages */
+	dbus_bus_add_match(bus, rule, &error);
+	if (dbus_error_is_set(&error)) {
+		LOGW("Fail to rule set: %s", error.message);
+		dbus_error_free(&error);
+		return -1;
+	}
+
+	if (dbus_connection_add_filter(bus,
+				_ug_client_dbus_signal_filter, data, NULL) == FALSE) {
+		LOGW("dbus conntaction add fileter fail");
+		return -1;
+	}
+
+	LOGD("bus : %p / filter func pointer : %p", bus , _ug_client_dbus_signal_filter);
+
+	ug_dbus_signal_handler_initialized = 1;
+
+	return 0;
+}
+
+static void _ug_client_dbus_signal_handler_fini(void *data)
+{
+	DBusError error;
+	char rule[128];
+
+	if (!ug_dbus_signal_handler_initialized)
+		return;
+
+	if(!dbus_connection_get_is_connected(bus)) {
+		LOGD("dbus connection(%p) is not connected", bus);
+		goto func_out;
+	}
+
+	dbus_connection_remove_filter(bus, _ug_client_dbus_signal_filter, data);
+
+	dbus_error_init(&error);
+
+	snprintf(rule, 128,
+			"path='%s',type='signal',interface='%s'", "/aul/dbus_handler",
+			"org.tizen.aul.signal");
+	dbus_bus_remove_match(bus, rule, &error);
+	if (dbus_error_is_set(&error)) {
+		LOGE("Fail to rule unset: %s", error.message);
+		dbus_error_free(&error);
+		goto func_out;
+	}
+
+	dbus_connection_close(bus);
+
+	LOGD("ug dbus signal finialized");
+
+func_out :
+	ug_dbus_signal_handler_initialized = 0;
+	bus = NULL;
+
+	return;
+}
+
 static int app_terminate(void *data)
 {
 	struct appdata *ad = data;
 
 	LOGD("app_terminate called");
+
+	_ug_client_dbus_signal_handler_fini(data);
 
 	evas_object_smart_callback_del(ad->win, "wm,rotation,changed", rotate);
 
@@ -414,6 +554,7 @@ static int app_pause(void *data)
 		elm_exit();
 	}
 #endif
+	is_app_pause = true;
 
 	return 0;
 }
@@ -421,6 +562,7 @@ static int app_pause(void *data)
 static int app_resume(void *data)
 {
 	ug_resume();
+	is_app_pause = true;
 	return 0;
 }
 
@@ -443,8 +585,8 @@ static int app_reset(bundle *b, void *data)
 
 	if (ret) {
 		LOGD("fail to request transient app: return value(%d)", ret);
-		if(vconf_notify_key_changed(VCONFKEY_IDLE_SCREEN_TOP, _home_screen_top_cb, ad) != 0) {
-			LOGW("home screen vconf key changed cb error");
+		if(_ug_client_dbus_listen_signal(data) < 0) {
+			LOGW("home screen dbus register error");
 		}
 	} else {
 		/* check home screen raise */

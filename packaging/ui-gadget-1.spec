@@ -23,6 +23,7 @@ BuildRequires:  pkgconfig(elementary)
 BuildRequires:  pkgconfig(capi-appfw-application)
 BuildRequires:  pkgconfig(capi-appfw-app-manager)
 BuildRequires:  pkgconfig(vconf)
+BuildRequires:  pkgconfig(dbus-glib-1)
 BuildRequires:  cmake
 BuildRequires:  edje-bin
 BuildRequires: pkgconfig(libtzplatform-config)
