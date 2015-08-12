@@ -24,6 +24,7 @@ BuildRequires:  pkgconfig(capi-appfw-application)
 BuildRequires:  pkgconfig(capi-appfw-app-manager)
 BuildRequires:  pkgconfig(vconf)
 BuildRequires:  pkgconfig(dbus-glib-1)
+BuildRequires:  pkgconfig(pkgmgr-info)
 BuildRequires:  cmake
 BuildRequires:  edje-bin
 BuildRequires: pkgconfig(libtzplatform-config)
