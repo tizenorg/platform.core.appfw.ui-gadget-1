@@ -55,8 +55,6 @@ struct ug_engine *ug_engine_load()
 {
 	void *handle;
 	struct ug_engine *engine;
-	char engine_file[PATH_MAX];
-	enum ug_engine_type type = UG_ENGINE_EFL;
 	int (*engine_init)(struct ug_engine_ops *ops);
 
 	engine = calloc(1, sizeof(struct ug_engine));
@@ -66,18 +64,7 @@ struct ug_engine *ug_engine_load()
 		return NULL;
 	}
 
-	if (type == UG_ENGINE_EFL) { /* UG_ENGINE_EFL is default*/
-		if (snprintf(engine_file, PATH_MAX, "/usr/lib/libui-gadget-1-efl-engine.so") < 0){
-			goto engine_free;
-		}
-		else if (file_exist(engine_file) < 0) {
-			goto engine_free;
-		}
-	}
-	else
-		goto engine_free;
-
-	handle = dlopen(engine_file, RTLD_LAZY);
+	handle = dlopen("libui-gadget-1-efl-engine.so", RTLD_LAZY);
 	if (!handle) {
 		_ERR("dlopen failed: %s", dlerror());
 		goto engine_free;
