@@ -235,9 +235,6 @@ static Evas_Object *create_win(const char *name)
 					       win_del, NULL);
 		/* disable destktop mode
 		evas_object_smart_callback_add(eo, "profile,changed", profile_changed_cb, NULL); */
-		ee = ecore_evas_ecore_evas_get(evas_object_evas_get(eo));
-		evas_output_size_get(ee, &w, &h);
-		evas_object_resize(eo, w, h);
 
 		elm_win_indicator_mode_set(eo,ELM_WIN_INDICATOR_SHOW);
 	}
