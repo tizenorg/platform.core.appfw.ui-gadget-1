@@ -66,7 +66,7 @@ struct ui_gadget_s {
 	struct ug_module *module;
 	struct ug_cbs cbs;
 
-	service_h service;
+	app_control_h app_control;
 
 	int destroy_me:1;
 	enum ug_layout_state layout_state;

@@ -29,7 +29,7 @@ int ugman_ug_add(ui_gadget_h parent, ui_gadget_h ug);
 ui_gadget_h ugman_ug_load(ui_gadget_h parent,
 				const char *name,
 				enum ug_mode mode,
-				service_h service,
+				app_control_h app_control,
 				struct ug_cbs *cbs);
 int ugman_ug_del(ui_gadget_h ug);
 int ugman_ug_del_all(void);
@@ -46,7 +46,7 @@ int ugman_resume(void);
 int ugman_pause(void);
 int ugman_send_event(enum ug_event event);
 int ugman_send_key_event(enum ug_key_event event);
-int ugman_send_message(ui_gadget_h ug, service_h msg);
+int ugman_send_message(ui_gadget_h ug, app_control_h msg);
 
 void *ugman_get_window(void);
 void *ugman_get_conformant(void);
