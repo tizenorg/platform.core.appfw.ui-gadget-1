@@ -304,7 +304,7 @@ static void ugman_ug_start(void *data)
 		ops = &ug->module->ops;
 
 	if (ops && ops->start)
-		ops->start(ug, ug->service, ops->priv);
+		ops->start(ug, ug->app_control, ops->priv);
 
 	return;
 }
@@ -334,7 +334,7 @@ static int ugman_ug_pause(void *data)
 		ops = &ug->module->ops;
 
 	if (ops && ops->pause)
-		ops->pause(ug, ug->service, ops->priv);
+		ops->pause(ug, ug->app_control, ops->priv);
 
  end:
 	job_end();
@@ -378,7 +378,7 @@ static int ugman_ug_resume(void *data)
 		ops = &ug->module->ops;
 
 	if (ops && ops->resume)
-		ops->resume(ug, ug->service, ops->priv);
+		ops->resume(ug, ug->app_control, ops->priv);
 
  end:
 	job_end();
@@ -446,7 +446,7 @@ static int ugman_ug_event(ui_gadget_h ug, enum ug_event event)
 	_DBG("ug_event_cb : ug(%p) / event(%d)", ug, event);
 
 	if (ops && ops->event)
-		ops->event(ug, event, ug->service, ops->priv);
+		ops->event(ug, event, ug->app_control, ops->priv);
 
 	return 0;
 }
@@ -496,7 +496,7 @@ static int ugman_ug_destroy(void *data)
 
 	if (ops && ops->destroy) {
 		_DBG("ug(%p) module destory cb call", ug);
-		ops->destroy(ug, ug->service, ops->priv);
+		ops->destroy(ug, ug->app_control, ops->priv);
 	}
 
 	cbs = &ug->cbs;
@@ -572,7 +572,7 @@ static int ugman_ug_create(void *data)
 		eng_ops = &ug_man.engine->ops;
 
 	if (ops && ops->create) {
-		ug->layout = ops->create(ug, ug->mode, ug->service, ops->priv);
+		ug->layout = ops->create(ug, ug->mode, ug->app_control, ops->priv);
 		if (!ug->layout) {
 			ug_relation_del(ug);
 			_ERR("ug(%p) layout is null", ug);
@@ -664,7 +664,7 @@ int ugman_ug_add(ui_gadget_h parent, ui_gadget_h ug)
 ui_gadget_h ugman_ug_load(ui_gadget_h parent,
 				const char *name,
 				enum ug_mode mode,
-				service_h service, struct ug_cbs *cbs)
+				app_control_h app_control, struct ug_cbs *cbs)
 {
 	int r;
 	ui_gadget_h ug;
@@ -684,7 +684,7 @@ ui_gadget_h ugman_ug_load(ui_gadget_h parent,
 	ug->name = strdup(name);
 
 	ug->mode = mode;
-	service_clone(&ug->service, service);
+	app_control_clone(&ug->app_control, app_control);
 	ug->opt = ug->module->ops.opt;
 	ug->state = UG_STATE_READY;
 	ug->children = NULL;
@@ -718,7 +718,7 @@ int ugman_ug_destroying(ui_gadget_h ug)
 		ops = &ug->module->ops;
 
 	if (ops && ops->destroying)
-		ops->destroying(ug, ug->service, ops->priv);
+		ops->destroying(ug, ug->app_control, ops->priv);
 
 	return 0;
 }
@@ -999,7 +999,7 @@ static int ugman_send_key_event_to_ug(ui_gadget_h ug,
 	}
 
 	if (ops && ops->key_event) {
-		ops->key_event(ug, event, ug->service, ops->priv);
+		ops->key_event(ug, event, ug->app_control, ops->priv);
 	} else {
 		return -1;
 	}
@@ -1023,7 +1023,7 @@ int ugman_send_key_event(enum ug_key_event event)
 	return ugman_send_key_event_to_ug(ug_man.fv_top, event);
 }
 
-int ugman_send_message(ui_gadget_h ug, service_h msg)
+int ugman_send_message(ui_gadget_h ug, app_control_h msg)
 {
 	struct ug_module_ops *ops = NULL;
 	if (!ug || !ugman_ug_exist(ug) || ug->state == UG_STATE_DESTROYED) {
@@ -1042,7 +1042,7 @@ int ugman_send_message(ui_gadget_h ug, service_h msg)
 		ops = &ug->module->ops;
 
 	if (ops && ops->message)
-		ops->message(ug, msg, ug->service, ops->priv);
+		ops->message(ug, msg, ug->app_control, ops->priv);
 
 	return 0;
 }

@@ -53,7 +53,7 @@ struct appdata {
 	int is_transient;
 
 	bundle *data;
-	service_h request;
+	app_control_h request;
 };
 
 #endif				/* __UG_CLIENT_H__ */

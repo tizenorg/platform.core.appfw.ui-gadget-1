@@ -50,26 +50,26 @@ extern "C" {
  */
 struct ug_module_ops {
 	/** create operation */
-	void *(*create) (ui_gadget_h ug, enum ug_mode mode, service_h service,
+	void *(*create) (ui_gadget_h ug, enum ug_mode mode, app_control_h app_control,
 					void *priv);
 	/** start operation */
-	void (*start) (ui_gadget_h ug, service_h service, void *priv);
+	void (*start) (ui_gadget_h ug, app_control_h app_control, void *priv);
 	/** pause operation */
-	void (*pause) (ui_gadget_h ug, service_h service, void *priv);
+	void (*pause) (ui_gadget_h ug, app_control_h app_control, void *priv);
 	/** resume operation */
-	void (*resume) (ui_gadget_h ug, service_h service, void *priv);
+	void (*resume) (ui_gadget_h ug, app_control_h app_control, void *priv);
 	/** destroy operation */
-	void (*destroy) (ui_gadget_h ug, service_h service, void *priv);
+	void (*destroy) (ui_gadget_h ug, app_control_h app_control, void *priv);
 	/** message operation */
-	void (*message) (ui_gadget_h ug, service_h msg, service_h service, void *priv);
+	void (*message) (ui_gadget_h ug, app_control_h msg, app_control_h app_control, void *priv);
 	/** event operation */
-	void (*event) (ui_gadget_h ug, enum ug_event event, service_h service,
+	void (*event) (ui_gadget_h ug, enum ug_event event, app_control_h app_control,
 				void *priv);
 	/** key event operation */
 	void (*key_event) (ui_gadget_h ug, enum ug_key_event event,
-					service_h service, void *priv);
+					app_control_h app_control, void *priv);
 	/** destroying operation */
-	void (*destroying) (ui_gadget_h ug, service_h service, void *priv);
+	void (*destroying) (ui_gadget_h ug, app_control_h app_control, void *priv);
 	/** reserved operations */
 	void *reserved[3];
 
@@ -121,7 +121,7 @@ int ug_destroy_me(ui_gadget_h ug);
  * This function sends result to caller of the given UI gadget instance.
  *
  * \par Purpose:
- * This function is used for sending result to caller of the given UI gadget instance. The result have to be composed with service handle.
+ * This function is used for sending result to caller of the given UI gadget instance. The result have to be composed with app_control handle.
  *
  * \par Typical use case:
  * UI gadget developer who want to send result to caller of the given UI gadget instance could use the function.
@@ -133,32 +133,32 @@ int ug_destroy_me(ui_gadget_h ug);
  * This function supposed to be called in the created UI gadget.
  *
  * @param[in] ug the UI gadget
- * @param[in] result the result, which is service type (see \ref service_PG "Tizen managed api reference guide")
+ * @param[in] result the result, which is app_control type (see \ref app_control_PG "Tizen managed api reference guide")
  * @return 0 on success, -1 on error
  *
  * \pre None
  * \post None
  * \see None
- * \remarks After send your message, you have to release it using service_destroy()
+ * \remarks After send your message, you have to release it using app_control_destroy()
  *
  * \par Sample code:
  * \code
  * #include <ui-gadget-module.h>
  * ...
- * // make a result with service
- * service_h result;
- * service_create(&result);
- * service_add_extra_data(result, "Content", "Hello");
+ * // make a result with app_control
+ * app_control_h result;
+ * app_control_create(&result);
+ * app_control_add_extra_data(result, "Content", "Hello");
  *
  * // send the result
  * ug_send_result(ug, result);
  *
  * // release the result
- * service_destroy(result);
+ * app_control_destroy(result);
  * ...
  * \endcode
  */
-int ug_send_result(ui_gadget_h ug, service_h send);
+int ug_send_result(ui_gadget_h ug, app_control_h send);
 
 
 /**
@@ -166,7 +166,7 @@ int ug_send_result(ui_gadget_h ug, service_h send);
  * This function sends result to caller of the given UI gadget instance.
  *
  * \par Purpose:
- * This function is used for sending result to caller of the given UI gadget instance. The result have to be composed with service handle.
+ * This function is used for sending result to caller of the given UI gadget instance. The result have to be composed with app_control handle.
  *
  * \par Typical use case:
  * UI gadget developer who want to send result to caller of the given UI gadget instance could use the function.
@@ -178,33 +178,33 @@ int ug_send_result(ui_gadget_h ug, service_h send);
  * This function supposed to be called in the created UI gadget.
  *
  * @param[in] ug the UI gadget
- * @param[in] the service handle in which the results of the callee (see \ref service_PG "Tizen managed api reference guide")
+ * @param[in] the app_control handle in which the results of the callee (see \ref app_control_PG "Tizen managed api reference guide")
  * @param[in] The result code of the launch request. (This is valid in case that ug is launched by appcontrol)
  * @return 0 on success, -1 on error
  *
  * \pre None
  * \post None
  * \see None
- * \remarks After send your message, you have to release it using service_destroy()
+ * \remarks After send your message, you have to release it using app_control_destroy()
  *
  * \par Sample code:
  * \code
  * #include <ui-gadget-module.h>
  * ...
- * // make a result with service
- * service_h result;
- * service_create(&result);
- * service_add_extra_data(result, "Content", "Hello");
+ * // make a result with app_control
+ * app_control_h result;
+ * app_control_create(&result);
+ * app_control_add_extra_data(result, "Content", "Hello");
  *
  * // send the result
- * ug_send_result_full(ug, result, SERVICE_RESULT_SUCCEEDED);
+ * ug_send_result_full(ug, result, APP_CONTROL_RESULT_SUCCEEDED);
  *
  * // release the result
- * service_destroy(result);
+ * app_control_destroy(result);
  * ...
  * \endcode
  */
-int ug_send_result_full(ui_gadget_h ug, service_h send, service_result_e result);
+int ug_send_result_full(ui_gadget_h ug, app_control_h send, app_control_result_e result);
 
 #ifdef __cplusplus
 }

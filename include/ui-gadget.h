@@ -150,7 +150,7 @@ struct ug_cbs {
 	void (*layout_cb) (ui_gadget_h ug, enum ug_mode mode,
 				void *priv);
 	/** result callback */
-	void (*result_cb) (ui_gadget_h ug, service_h result, void *priv);
+	void (*result_cb) (ui_gadget_h ug, app_control_h result, void *priv);
 	/** destroy callback */
 	void (*destroy_cb) (ui_gadget_h ug, void *priv);
 	/** end callback */
@@ -270,20 +270,20 @@ int ug_init_efl(Evas_Object *win, enum ug_option opt);
  * @param[in] parent parent's UI gadget. If the UI gadget uses the function, the parent has to be the UI gadget. Otherwise, if an application uses the function, the parent has to be NULL
  * @param[in] name name of UI gadget
  * @param[in] mode mode of UI gadget (UG_MODE_FULLVIEW | UG_MODE_FRAMEVIEW)
- * @param[in] service argument for the UI gadget  (see \ref service_PG "Tizen managed api reference guide")
+ * @param[in] app_control argument for the UI gadget  (see \ref app_control_PG "Tizen managed api reference guide")
  * @param[in] cbs callback functions (layout callback, result callback, destroy callback, see struct ug_cbs) and private data.
  * @return The pointer of UI gadget, NULL on error
  *
  * \pre ug_init()
  * \post None
  * \see struct ug_cbs, enum ug_mode
- * \remarks If you passed "service", you MUST release it using service_destroy() after ug_create()
+ * \remarks If you passed "app_control", you MUST release it using app_control_destroy() after ug_create()
  *
  * \par Sample code:
  * \code
  * #include <ui-gadget.h>
  * ...
- * service_h service;
+ * app_control_h app_control;
  * ui_gadget_h ug;
  * struct ug_cbs cbs = {0, };
  *
@@ -294,19 +294,19 @@ int ug_init_efl(Evas_Object *win, enum ug_option opt);
  * cbs.priv = user_data;
  *
  * // create arguments
- * service_create(&service);
- * service_add_extra_data(service, "Content", "Hello");
+ * app_control_create(&app_control);
+ * app_control_add_extra_data(app_control, "Content", "Hello");
  *
  * // create "helloUG-efl" UI gadget instance
- * ug = ug_create(NULL, "helloUG-efl", UG_MODE_FULLVIEW, service, &cbs);
+ * ug = ug_create(NULL, "helloUG-efl", UG_MODE_FULLVIEW, app_control, &cbs);
  *
  * // release arguments
- * service_destroy(b);
+ * app_control_destroy(b);
  * ...
  * \endcode
  */
 ui_gadget_h ug_create(ui_gadget_h parent, const char *name,
-					enum ug_mode mode, service_h service,
+					enum ug_mode mode, app_control_h app_control,
 					struct ug_cbs *cbs);
 
 /**
@@ -699,7 +699,7 @@ int ug_send_key_event(enum ug_key_event event);
  * This function sends message to the given UI gadget instance
  *
  * \par Purpose:
- * This function is used for sending message to created UI gadget. The message have to be composed with service handle.
+ * This function is used for sending message to created UI gadget. The message have to be composed with app_control handle.
  *
  * \par Typical use case:
  * Anyone who want to send message to created UI gadget.
@@ -711,32 +711,32 @@ int ug_send_key_event(enum ug_key_event event);
  * This function supposed to be called after successful initialization with ug_init() and creation UI gadget with ug_create()
  *
  * @param[in] ug The UI gadget
- * @param[in] msg message to send, which is service type (see \ref service_PG "Tizen managed api reference guide")
+ * @param[in] msg message to send, which is app_control type (see \ref app_control_PG "Tizen managed api reference guide")
  * @return 0 on success, -1 on error
  *
  * \pre ug_init(), ug_create()
  * \post None
  * \see None
- * \remarks After send your message, you have to release it using service_destroy()
+ * \remarks After send your message, you have to release it using app_control_destroy()
  *
  * \par Sample code:
  * \code
  * #include <ui-gadget.h>
  * ...
- * // make a message with service
- * service_h msg;
- * service_create(&msg)
- * service_add_extra_data(msg, "Content", "Hello");
+ * // make a message with app_control
+ * app_control_h msg;
+ * app_control_create(&msg)
+ * app_control_add_extra_data(msg, "Content", "Hello");
  *
  * // send the message
  * ug_send_message(ug, msg);
  *
  * // release the message
- * service_destroy(msg);
+ * app_control_destroy(msg);
  * ...
  * \endcode
  */
-int ug_send_message(ui_gadget_h ug, service_h msg);
+int ug_send_message(ui_gadget_h ug, app_control_h msg);
 
 /**
  * \par Description:

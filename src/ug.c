@@ -65,9 +65,9 @@ int ug_free(ui_gadget_h ug)
 		free((void *)ug->name);
 		ug->name = NULL;
 	}
-	if (ug->service) {
-		service_destroy(ug->service);
-		ug->service = NULL;
+	if (ug->app_control) {
+		app_control_destroy(ug->app_control);
+		ug->app_control = NULL;
 	}
 	free(ug);
 	ug = NULL;
@@ -77,7 +77,7 @@ int ug_free(ui_gadget_h ug)
 UG_API ui_gadget_h ug_create(ui_gadget_h parent,
 				   const char *name,
 				   enum ug_mode mode,
-				   service_h service, struct ug_cbs *cbs)
+				   app_control_h app_control, struct ug_cbs *cbs)
 {
 	if (!name) {
 		_ERR("ug_create() failed: Invalid name");
@@ -91,7 +91,7 @@ UG_API ui_gadget_h ug_create(ui_gadget_h parent,
 		return NULL;
 	}
 
-	return ugman_ug_load(parent, name, mode, service, cbs);
+	return ugman_ug_load(parent, name, mode, app_control, cbs);
 }
 
 #ifndef UG_WAYLAND
@@ -246,9 +246,9 @@ UG_API int ug_send_key_event(enum ug_key_event event)
 	return ugman_send_key_event(event);
 }
 
-UG_API int ug_send_result(ui_gadget_h ug, service_h send)
+UG_API int ug_send_result(ui_gadget_h ug, app_control_h send)
 {
-	service_h send_dup = NULL;
+	app_control_h send_dup = NULL;
 
 	if (!ug || !ugman_ug_exist(ug)) {
 		_ERR("ug_send_result() failed: Invalid ug");
@@ -262,9 +262,9 @@ UG_API int ug_send_result(ui_gadget_h ug, service_h send)
 	}
 
 	if (send) {
-		service_clone(&send_dup, send);
+		app_control_clone(&send_dup, send);
 		if (!send_dup) {
-			_ERR("ug_send_result() failed: service_destroy failed");
+			_ERR("ug_send_result() failed: app_control_destroy failed");
 			return -1;
 		}
 	}
@@ -272,14 +272,14 @@ UG_API int ug_send_result(ui_gadget_h ug, service_h send)
 	ug->cbs.result_cb(ug, send_dup, ug->cbs.priv);
 
 	if (send_dup)
-		service_destroy(send_dup);
+		app_control_destroy(send_dup);
 
 	return 0;
 }
 
-UG_API int ug_send_result_full(ui_gadget_h ug, service_h send, service_result_e result)
+UG_API int ug_send_result_full(ui_gadget_h ug, app_control_h send, app_control_result_e result)
 {
-	service_h send_dup = NULL;
+	app_control_h send_dup = NULL;
 	char tmp_result[4] = {0,};
 
 	if (!ug || !ugman_ug_exist(ug)) {
@@ -294,34 +294,34 @@ UG_API int ug_send_result_full(ui_gadget_h ug, service_h send, service_result_e 
 	}
 
 	if (send) {
-		service_clone(&send_dup, send);
+		app_control_clone(&send_dup, send);
 		if (!send_dup) {
-			_ERR("ug_send_result() failed: service_destroy failed");
+			_ERR("ug_send_result() failed: app_control_destroy failed");
 			return -1;
 		}
 	}
 
 	snprintf(tmp_result, 4, "%d", result);
 
-	service_add_extra_data(send_dup, UG_SERVICE_DATA_RESULT, (const char*)tmp_result);
+	app_control_add_extra_data(send_dup, UG_SERVICE_DATA_RESULT, (const char*)tmp_result);
 
 	ug->cbs.result_cb(ug, send_dup, ug->cbs.priv);
 
 	if (send_dup)
-		service_destroy(send_dup);
+		app_control_destroy(send_dup);
 
 	return 0;
 }
 
-UG_API int ug_send_message(ui_gadget_h ug, service_h msg)
+UG_API int ug_send_message(ui_gadget_h ug, app_control_h msg)
 {
 	int r;
 
-	service_h msg_dup = NULL;
+	app_control_h msg_dup = NULL;
 	if (msg) {
-		service_clone(&msg_dup, msg);
+		app_control_clone(&msg_dup, msg);
 		if (!msg_dup) {
-			_ERR("ug_send_message() failed: service_destroy failed");
+			_ERR("ug_send_message() failed: app_control_destroy failed");
 			return -1;
 		}
 	}
@@ -329,7 +329,7 @@ UG_API int ug_send_message(ui_gadget_h ug, service_h msg)
 	r = ugman_send_message(ug, msg_dup);
 
 	if (msg_dup)
-		service_destroy(msg_dup);
+		app_control_destroy(msg_dup);
 
 	return r;
 }

@@ -164,13 +164,13 @@ UG_MODULE_API void UG_MODULE_EXIT(struct ug_module_ops *ops)
 \note <b>struct ug_module_ops</b> is a data structure describing operations, private data, and the option of UI gadget:
 @code
 struct ug_module_ops {
-	void *(*create)(ui_gadget_h ug, enum ug_mode mode, service_h service, void *priv);
-	void (*start)(ui_gadget_h ug, service_h service, void *priv);
-	void (*pause)(ui_gadget_h ug, service_h service, void *priv);
-	void (*resume)(ui_gadget_h ug, service_h service, void *priv);
-	void (*destroy)(ui_gadget_h ug, service_h service, void *priv);
-	void (*message)(ui_gadget_h ug, service_h *msg, service_h service, void *priv);
-	void (*event)(ui_gadget_h ug, enum ug_event event, service_h service, void *priv);
+	void *(*create)(ui_gadget_h ug, enum ug_mode mode, app_control_h app_control, void *priv);
+	void (*start)(ui_gadget_h ug, app_control_h app_control, void *priv);
+	void (*pause)(ui_gadget_h ug, app_control_h app_control, void *priv);
+	void (*resume)(ui_gadget_h ug, app_control_h app_control, void *priv);
+	void (*destroy)(ui_gadget_h ug, app_control_h app_control, void *priv);
+	void (*message)(ui_gadget_h ug, app_control_h *msg, app_control_h app_control, void *priv);
+	void (*event)(ui_gadget_h ug, enum ug_event event, app_control_h app_control, void *priv);
 	void *reserved[5];
 	void *priv;
 	enum ug_option opt;
@@ -211,11 +211,11 @@ When "helloUG-efl" is created, the create operation is invoked (See Picture 2-1)
 
 The implementation of create operation is <b>on_create()</b>. Basically, in the operation, we have to make a base layout and return it. Hence, we made base layout using <i>"window layout winset."</i> In case of fullview, we let indicator area be shown, otherwise, we don't (see <i>create_fullview()</i> and <i>create_frameview()</i>.) In addition, in the base layout, we put a box including a label and two buttons (see <i>create_content()</i>.) The label is labeled "Hello UI Gadget." And the first button, labeled "Send result", is for sending result to the "helloUG-efl" caller. The other button, labeled "Back", is for sending destroy request to the caller. For more information about two buttons, please see <i>Send results and request to destroy section</i>.
 
-\note <b>Arguments:</b> All operations receive servive type data which is named <i>service</i> (see \ref service_PG "Tizen Managed APi Reference Guide > Application Framework -> Application") And the argument <i>service</i> is automatically released by UI gadget manager after the UI gadget is destroyed.
+\note <b>Arguments:</b> All operations receive servive type data which is named <i>app_control</i> (see \ref app_control_PG "Tizen Managed APi Reference Guide > Application Framework -> Application") And the argument <i>app_control</i> is automatically released by UI gadget manager after the UI gadget is destroyed.
 
 @code
 // in helloUG-efl.c
-static void *on_create(ui_gadget_h ug, enum ug_mode mode, service_h service, void *priv)
+static void *on_create(ui_gadget_h ug, enum ug_mode mode, app_control_h app_control, void *priv)
 {
 	Evas_Object *parent;
 	Evas_Object *content;
@@ -319,7 +319,7 @@ The implementation of start operation is <b>on_start()</b>. Usually every job wo
 
 @code
 // in helloUG-efl.c
-static void on_start(ui_gadget_h ug, service_h service, void *priv)
+static void on_start(ui_gadget_h ug, app_control_h app_control, void *priv)
 {
 
 }
@@ -333,7 +333,7 @@ The implementation of destroy operation is <b>on_destroy()</b>. We usually relea
 
 @code
 // in helloUG-efl.c
-static void on_destroy(ui_gadget_h ug, service_h service, void *priv)
+static void on_destroy(ui_gadget_h ug, app_control_h app_control, void *priv)
 {
 	struct ug_data *ugd;
 
@@ -363,25 +363,25 @@ And when a system event is generated and UI gadget receives event from caller us
 
 \image html SLP_UI_Gadget_PG_image2-7.png "Picture 2-7. Send system event to UI gadget module"
 
-The implementation of pause, resume, message, and event operations are on_pause(), on_resume(), on_message(), and on_event(). In on_pause() and on_resume(), you can describe actions performed when a state is changed to pause or resume. For example, music player UI gadget can stop playing music or restart playing music in these operations. In on_message(), you can get service type data from caller and deal with it. In on_event(), you can describe a proper job related to the passed system event.
+The implementation of pause, resume, message, and event operations are on_pause(), on_resume(), on_message(), and on_event(). In on_pause() and on_resume(), you can describe actions performed when a state is changed to pause or resume. For example, music player UI gadget can stop playing music or restart playing music in these operations. In on_message(), you can get app_control type data from caller and deal with it. In on_event(), you can describe a proper job related to the passed system event.
 
 @code
 // in helloUG-efl.c
-static void on_pause(ui_gadget_h ug, service_h service, void *priv)
+static void on_pause(ui_gadget_h ug, app_control_h app_control, void *priv)
 {
        // Do what you need to do when paused.
 }
-static void on_resume(ui_gadget_h ug, service_h service, void *priv)
-{
-       // Do what you need to do when paused.
-}
-
-static void on_message(ui_gadget_h ug, service msg, service_h service, void *priv)
+static void on_resume(ui_gadget_h ug, app_control_h app_control, void *priv)
 {
        // Do what you need to do when paused.
 }
 
-static void on_event(ui_gadget_h ug, enum ug_event event, service_h service, void *priv)
+static void on_message(ui_gadget_h ug, app_control msg, app_control_h app_control, void *priv)
+{
+       // Do what you need to do when paused.
+}
+
+static void on_event(ui_gadget_h ug, enum ug_event event, app_control_h app_control, void *priv)
 {
 	switch (event) {
 	case UG_EVENT_LOW_MEMORY:
@@ -406,7 +406,7 @@ static void on_event(ui_gadget_h ug, enum ug_event event, service_h service, voi
 }
 @endcode
 
-\warning Message data of message operation is service type data, named <i>msg.</i> <b>Because the message data is released after message operation is finished,</b> if you want to keep using it, please use <b>service_clone()()</b> which duplicates given service data (see \ref service_PG "Tizen Managed API Reference Guide")
+\warning Message data of message operation is app_control type data, named <i>msg.</i> <b>Because the message data is released after message operation is finished,</b> if you want to keep using it, please use <b>app_control_clone()()</b> which duplicates given app_control data (see \ref app_control_PG "Tizen Managed API Reference Guide")
 
 <br>
 <h3 class="pg">Send results and destroy request</h3>
@@ -419,20 +419,20 @@ And to send the destroy request, use <b>ug_destroy_me().</b>(), then UG library 
 
 \image html SLP_UI_Gadget_PG_image2-9.png "Picture 2-9. UI gadget destroy request"
 
-We use service library for composing result data. The service provides us a few APIs to make a list of dictionary data that consists of key and value. (ex. {"name"  "John Doe"}) To get more information of service, please see \ref service_PG "Tizen Managed API Reference Guide".
+We use app_control library for composing result data. The app_control provides us a few APIs to make a list of dictionary data that consists of key and value. (ex. {"name"  "John Doe"}) To get more information of app_control, please see \ref app_control_PG "Tizen Managed API Reference Guide".
 
-\warning After send your result data, you have to release it using <b>service_destroy()</b> API.
+\warning After send your result data, you have to release it using <b>app_control_destroy()</b> API.
 
 In our "helloUG-efl", we made two buttons for sending results and destroy request as below:
 @code
 // in helloUG-efl.c
 
-//Include to use service APIs
+//Include to use app_control APIs
 #include <app.h>
 
 static void result_cb(void *data, Evas_Object *obj, void *event_info)
 {
-	service_h result;
+	app_control_h result;
 	struct ug_data *ugd;
 	int ret;
 
@@ -441,15 +441,15 @@ static void result_cb(void *data, Evas_Object *obj, void *event_info)
 
 	ugd = data;
 
-	ret = service_create(&result);
+	ret = app_control_create(&result);
 
-	service_add_extra_data(result, "name", "hello-UG");
-	service_add_extra_data(result, "description", "sample UI gadget");
+	app_control_add_extra_data(result, "name", "hello-UG");
+	app_control_add_extra_data(result, "description", "sample UI gadget");
 
 	ug_send_result(ugd->ug, result);
 
-	// release service
-	service_destroy(result);
+	// release app_control
+	app_control_destroy(result);
 }
 
 static void back_cb(void *data, Evas_Object *obj, void *event_info)
@@ -467,7 +467,7 @@ static void back_cb(void *data, Evas_Object *obj, void *event_info)
 }
 @endcode
 
-\note <b>To use service</b>
+\note <b>To use app_control</b>
 - Install capi-appfw-application-dev package (add in your RPM spec file)
 - Modify CMakeFile.txt to use capi package as follow:
 @code
@@ -584,7 +584,7 @@ UG_INIT_EFL(win, opt);
 <br>
 <h3 class="pg">Create UI gadget instance</h3>
 
-To create UI gadget instance, you have to invoke <b>ug_create()</b> which has five arguments: <i>parent, name, mode, service, and cbs.</i>
+To create UI gadget instance, you have to invoke <b>ug_create()</b> which has five arguments: <i>parent, name, mode, app_control, and cbs.</i>
 
 First, the <i>parent</i> is provided for specifying parent UI gadget, and it helps UI gadget manager to manage UI gadget tree (see <i>Management section.</i>) For instance, if the UI gadget 'A' uses other UI gadgets,  the parent has to be the 'A.' Otherwise, if an application uses UI gadgets, the <i>parent</i> has to be NULL.
 
@@ -592,13 +592,13 @@ Second, the <i>name</i> is the UI gadget's name (ex. "helloUG-efl")
 
 Third, the <i>mode</i> could be UG_MODE_FULLVIEW to show the UI gadget as fullview, or UG_MODE_FRAMEVIEW to show it as frameview.
 
-Fourth, the <i>service</i> is arguments for the UI gadget which is service type (see \ref service_PG "Tizen Managed API Reference Guide")
+Fourth, the <i>app_control</i> is arguments for the UI gadget which is app_control type (see \ref app_control_PG "Tizen Managed API Reference Guide")
 
-\warning After create UI gadget, you have to release the argument using <b>service_destroy()</b> API.
+\warning After create UI gadget, you have to release the argument using <b>app_control_destroy()</b> API.
 
 Fifth, the <i>cbs</i> is data describing layout callback, result callback, destroy callback, and private data. In detail, layout callback is used for layout arrangement, and it invoked after the UI gadget is created, and result callback is invoked to receive result from the UI gadget. And destroy callback is invoked to deal with destroy request from the UI gadget.
 
-\warning Result data of the result callback is service type data, named <i>result</i>. <b>Because the result data is released after result callback is finished</b>, if you want to keep using it, please use <b>service_clone()</b> which duplicates given service data (see \ref service_PG "Tizen Managed API Reference Guide")
+\warning Result data of the result callback is app_control type data, named <i>result</i>. <b>Because the result data is released after result callback is finished</b>, if you want to keep using it, please use <b>app_control_clone()</b> which duplicates given app_control data (see \ref app_control_PG "Tizen Managed API Reference Guide")
 
 Using ug_create(), you can create UI gadget. After UI Gadget create operation is completed, layout callback function is called with base layout for layout arrangement (See Picture 2-11).<br><br>
 
@@ -618,14 +618,14 @@ And using ug_destroy_me(), UI gadget sends the destroy request to caller (See Pi
 ui_gadget_h ug_create (ui_gadget_h parent,
 			const char *name,
 			enum ug_mode mode,
-			service_h service,
+			app_control_h app_control,
 			struct ug_cbs *cbs);
 
 \note <b>struct ug_cbs</b> is describing some callbacks and private data:
 @code
 struct ug_cbs {
 	void (*layout_cb)(ui_gadget_h ug, enum ug_mode mode, void *priv);
-	void (*result_cb)(ui_gadget_h ug, service result, void *priv);
+	void (*result_cb)(ui_gadget_h ug, app_control result, void *priv);
 	void (*destroy_cb)(ui_gadget_h ug, void *priv);
 	void *priv;
 };
@@ -664,7 +664,7 @@ static void layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
 	}
 }
 
-static void result_cb(ui_gadget_h ug, service result, void *priv)
+static void result_cb(ui_gadget_h ug, app_control result, void *priv)
 {
 	struct my_data *mydata;
 	const char *val;
@@ -674,7 +674,7 @@ static void result_cb(ui_gadget_h ug, service result, void *priv)
 
 	mydata = priv;
 	if (result) {
-		service_get_extra_data(result, "name", val);
+		app_control_get_extra_data(result, "name", val);
 		if (val)
 			fprintf(stderr, "The name of UI gadget that sends result is %s\n", val);
 	}
@@ -742,7 +742,7 @@ static void layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
 	}
 }
 
-static void result_cb(ui_gadget_h ug, service result, void *priv)
+static void result_cb(ui_gadget_h ug, app_control result, void *priv)
 {
 	struct my_data *mydata;
 	const char *val;
@@ -753,7 +753,7 @@ static void result_cb(ui_gadget_h ug, service result, void *priv)
 	mydata = priv;
 
 	if (result) {
-		service_get_extra_data(result, "name", val);
+		app_control_get_extra_data(result, "name", val);
 		if (val)
 			fprintf(stderr, "The name of UI gadget that sends result is %s\n", val);
 	}
@@ -795,30 +795,30 @@ ui_gadget_h create_ug(struct my_data *data)
 <br>
 <h2 class="pg">Send message</h2>
 
-We provide API for sending message: <b>ug_send_message()</b>. When you send a message, you have to use service type data (see \ref service_PG "Tizen Managed API Reference Guide"). (See Picture 2-14)
+We provide API for sending message: <b>ug_send_message()</b>. When you send a message, you have to use app_control type data (see \ref app_control_PG "Tizen Managed API Reference Guide"). (See Picture 2-14)
 
 \note <b>Prototype of ug_send_message() (See API reference guide):</b>
 @code
-int ug_send_message (ui_gadget_h ug, service msg);
+int ug_send_message (ui_gadget_h ug, app_control msg);
 @endcode
 
 \image html SLP_UI_Gadget_PG_image2-14.png "Picture 2-14. Send message"
 
-\warning After send your message, you have to release it using <b>service_destroy()</b> API.
+\warning After send your message, you have to release it using <b>app_control_destroy()</b> API.
 @code
 //example
-	service_h msg;
+	app_control_h msg;
 
-	ret = service_create(&msg);
+	ret = app_control_create(&msg);
 
-	service_add_extra_data(msg, "name", "hello-UG");
-	service_add_extra_data(msg, "description", "sample UI gadget");
+	app_control_add_extra_data(msg, "name", "hello-UG");
+	app_control_add_extra_data(msg, "description", "sample UI gadget");
 
 	//Send message
 	ug_send_message(ug, msg);
 
-	//release service
-	service_destroy(msg);
+	//release app_control
+	app_control_destroy(msg);
 @endcode
 
 <br>

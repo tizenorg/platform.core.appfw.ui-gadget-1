@@ -26,6 +26,7 @@
 #include <dlog.h>
 #include <aul.h>
 #include <app.h>
+#include <app_control_internal.h>
 #include <vconf.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
@@ -153,7 +154,7 @@ void _ug_client_layout_cb(ui_gadget_h ug, enum ug_mode mode, void *priv)
 	}
 }
 
-void _ug_client_result_cb(ui_gadget_h ug, service_h reply, void *priv)
+void _ug_client_result_cb(ui_gadget_h ug, app_control_h reply, void *priv)
 {
 	struct appdata *ad = NULL;
 	int ret;
@@ -163,13 +164,13 @@ void _ug_client_result_cb(ui_gadget_h ug, service_h reply, void *priv)
 	if (!ug || !priv)
 		return;
 
-	ret = service_get_extra_data (reply, UG_SERVICE_DATA_RESULT, &value);
-	if((ret == SERVICE_ERROR_NONE) && (value)) {
+	ret = app_control_get_extra_data (reply, UG_SERVICE_DATA_RESULT, &value);
+	if((ret == APP_CONTROL_ERROR_NONE) && (value)) {
 		result = atoi(value);
 		LOGD("reply result is %d", result);
 	} else {
-		LOGW("get reply result error(%d) . result will be SERVICE_RESULT_SUCCEEDED", ret);
-		result = SERVICE_RESULT_SUCCEEDED;
+		LOGW("get reply result error(%d) . result will be APP_CONTROL_RESULT_SUCCEEDED", ret);
+		result = APP_CONTROL_RESULT_SUCCEEDED;
 	}
 
 	ad = priv;
@@ -178,9 +179,9 @@ void _ug_client_result_cb(ui_gadget_h ug, service_h reply, void *priv)
 		return;
 	}
 
-	ret = service_reply_to_launch_request(reply, ad->request, (service_result_e)result);
-	if (ret != SERVICE_ERROR_NONE)
-		LOGE("service_reply_to_launch_request failed, %d", ret);
+	ret = app_control_reply_to_launch_request(reply, ad->request, (app_control_result_e)result);
+	if (ret != APP_CONTROL_ERROR_NONE)
+		LOGE("app_control_reply_to_launch_request failed, %d", ret);
 }
 
 void _ug_client_destroy_cb(ui_gadget_h ug, void *priv)
@@ -526,7 +527,7 @@ static int app_terminate(void *data)
 		ad->win = NULL;
 	}
 
-	service_destroy(ad->request);
+	app_control_destroy(ad->request);
 
 	if (ad->name) {
 		free(ad->name);
@@ -547,7 +548,7 @@ static int app_pause(void *data)
 
 #if ENABLE_TRANSIENT_SUB_MODE
 	if (!ad->is_transient) {
-		LOGD("app_pause received. close ug service");
+		LOGD("app_pause received. close ug app_control");
 		elm_exit();
 	}
 #endif
@@ -573,7 +574,7 @@ static int app_reset(bundle *b, void *data)
 {
 	struct appdata *ad = data;
 	struct ug_cbs cbs = { 0, };
-	service_h service;
+	app_control_h app_control;
 	enum ug_mode mode = UG_MODE_FULLVIEW;
 	int ret;
 	Ecore_X_Window id2 = elm_win_xwindow_get(ad->win);
@@ -596,13 +597,13 @@ static int app_reset(bundle *b, void *data)
 	}
 
 	if (ad->data)	/* ug-launcher */
-		service_create_event(ad->data, &service);
+		app_control_create_event(ad->data, &app_control);
 	else
-		service_create_event(b, &service);
+		app_control_create_event(b, &app_control);
 
-	if(service) {
-		service_clone(&ad->request, service);
-		service_destroy(service);
+	if(app_control) {
+		app_control_clone(&ad->request, app_control);
+		app_control_destroy(app_control);
 	}
 
 	cbs.layout_cb = _ug_client_layout_cb;
