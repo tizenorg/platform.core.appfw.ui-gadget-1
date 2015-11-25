@@ -38,19 +38,6 @@ enum ug_engine_type {
 	UG_ENGINE_EFL = 0x00,
 };
 
-static int file_exist(const char *filename)
-{
-	FILE *file;
-
-	file = fopen(filename, "r");
-	if (file)
-	{
-		fclose(file);
-		return 0;
-	}
-	return -1;
-}
-
 struct ug_engine *ug_engine_load()
 {
 	void *handle;

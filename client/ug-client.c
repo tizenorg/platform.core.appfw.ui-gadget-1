@@ -25,6 +25,7 @@
 
 #include <dlog.h>
 #include <aul.h>
+#include <aul_svc.h>
 #include <app.h>
 #include <app_control_internal.h>
 #include <vconf.h>
@@ -212,21 +213,9 @@ void _ug_client_end_cb(ui_gadget_h ug, void *priv)
 	elm_exit();
 }
 
-static void profile_changed_cb(void *data, Evas_Object * obj, void *event)
-{
-	const char *profile = elm_config_profile_get();
-
-	LOGE("!!! profile_changed_cb(%s) !!!", profile);
-
-	if (strcmp(profile, "desktop") == 0)
-		elm_win_indicator_mode_set(obj, ELM_WIN_INDICATOR_HIDE);
-}
-
 static Evas_Object *create_win(const char *name)
 {
-	Ecore_Evas *ee;
 	Evas_Object *eo;
-	int w, h;
 
 	eo = elm_win_add(NULL, name, ELM_WIN_BASIC);
 	if (eo) {
@@ -234,9 +223,6 @@ static Evas_Object *create_win(const char *name)
 		elm_win_conformant_set(eo, EINA_TRUE);
 		evas_object_smart_callback_add(eo, "delete,request",
 					       win_del, NULL);
-		/* disable destktop mode
-		evas_object_smart_callback_add(eo, "profile,changed", profile_changed_cb, NULL); */
-
 		elm_win_indicator_mode_set(eo,ELM_WIN_INDICATOR_SHOW);
 	}
 
@@ -262,17 +248,17 @@ static Evas_Object *_ug_client_load_edj(Evas_Object *parent, const char *file,
 	return eo;
 }
 
-static int low_memory(void *data)
+static int low_memory(void *event_info, void *data)
 {
 	return ug_send_event(UG_EVENT_LOW_MEMORY);
 }
 
-static int low_battery(void *data)
+static int low_battery(void *event_info, void *data)
 {
 	return ug_send_event(UG_EVENT_LOW_BATTERY);
 }
 
-static int lang_changed(void *data)
+static int lang_changed(void *event_info, void *data)
 {
 	char* lang = NULL;
 
@@ -288,7 +274,7 @@ static int lang_changed(void *data)
 	return ug_send_event(UG_EVENT_LANG_CHANGE);
 }
 
-static int region_changed(void *data)
+static int region_changed(void *event_info, void *data)
 {
 	return ug_send_event(UG_EVENT_REGION_CHANGE);
 }
@@ -329,7 +315,7 @@ static int app_create(void *data)
 	edje_object_signal_callback_add(elm_layout_edje_get(ly),
 					"EXIT", "*", main_quit_cb, NULL);
 	ad->ly_main = ly;
-	lang_changed(ad);
+	lang_changed(NULL, ad);
 
 	/* rotate notice */
 	int angle = -1;
@@ -540,18 +526,10 @@ static int app_terminate(void *data)
 
 static int app_pause(void *data)
 {
-	struct appdata *ad = data;
-
 	LOGD("app_pause called");
 
 	ug_pause();
 
-#if ENABLE_TRANSIENT_SUB_MODE
-	if (!ad->is_transient) {
-		LOGD("app_pause received. close ug app_control");
-		elm_exit();
-	}
-#endif
 	is_app_pause = true;
 
 	return 0;
@@ -579,7 +557,7 @@ static int app_reset(bundle *b, void *data)
 	int ret;
 	Ecore_X_Window id2 = elm_win_xwindow_get(ad->win);
 
-	ret = appsvc_request_transient_app(b, id2, svc_cb, "svc test");
+	ret = aul_svc_request_transient_app(b, id2, svc_cb, "svc test");
 
 	if (ret) {
 		LOGD("fail to request transient app: return value(%d)", ret);

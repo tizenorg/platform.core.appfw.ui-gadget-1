@@ -24,6 +24,7 @@
 #include <string.h>
 #include <errno.h>
 #include <glib.h>
+#include <Elementary.h>
 
 #ifndef UG_WAYLAND
 #include <X11/Xatom.h>
