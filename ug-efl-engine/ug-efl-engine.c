@@ -104,7 +104,7 @@ static void __del_finished(void *data, Evas_Object *obj, void *event_info)
 	evas_object_smart_callback_del(obj, "transition,finished",
 					__del_finished);
 
-	if(ug->layout_state == UG_LAYOUT_HIDEEFFECT)
+	if (ug->layout_state == UG_LAYOUT_HIDEEFFECT)
 		__del_effect_end(ug);
 	else
 		_ERR("wrong ug(%p) state(%d)", ug, ug->layout_state);
@@ -146,9 +146,8 @@ static void __hide_end(ui_gadget_h ug)
 		}
 	}
 
-	if (ug->layout) {
+	if (ug->layout)
 		evas_object_hide(ug->layout);
-	}
 }
 
 static void __hide_effect_end(ui_gadget_h ug)
@@ -169,7 +168,7 @@ static void __hide_finished(void *data, Evas_Object *obj, void *event_info)
 	evas_object_smart_callback_del(obj, "transition,finished",
 					__hide_finished);
 
-	if(ug->layout_state == UG_LAYOUT_HIDEEFFECT)
+	if (ug->layout_state == UG_LAYOUT_HIDEEFFECT)
 		__hide_effect_end(ug);
 	else
 		_ERR("wrong ug(%p) state(%d)", ug, ug->layout_state);
@@ -196,7 +195,7 @@ static void __on_hideonly_cb(void *data, Evas_Object *obj)
 		return;
 	}
 
-	if ((elm_naviframe_top_item_get(navi) == ug->effect_layout) 
+	if ((elm_naviframe_top_item_get(navi) == ug->effect_layout)
 		&& (ug->layout_state != UG_LAYOUT_NOEFFECT)) {
 		_DBG("\t cb transition add ug=%p", ug);
 		evas_object_smart_callback_add(navi, "transition,finished",
@@ -221,14 +220,14 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 	evas_object_intercept_hide_callback_del(ug->layout,
 						__on_hideonly_cb);
 
-	if(hide_cb == NULL) {
+	if (hide_cb == NULL) {
 		/* ug_destroy_all case */
 		evas_object_event_callback_del(ug->layout, EVAS_CALLBACK_DEL,
 			(Evas_Object_Event_Cb)_layout_del_cb);
 		return;
 	}
 
-	if(!hide_end_cb)
+	if (!hide_end_cb)
 		hide_end_cb = hide_cb;
 
 	if (ug != t_ug) {
@@ -237,7 +236,7 @@ static void on_destroy(ui_gadget_h ug, ui_gadget_h t_ug,
 		return;
 	}
 
-	if(ug->layout_state == UG_LAYOUT_SHOW) {
+	if (ug->layout_state == UG_LAYOUT_SHOW) {
 		__del_effect_top_layout(ug);
 	} else if (ug->layout_state == UG_LAYOUT_SHOWEFFECT) {
 		evas_object_smart_callback_del(navi, "transition,finished",
@@ -269,7 +268,7 @@ static void __show_finished(void *data, Evas_Object *obj, void *event_info)
 		_DBG("ug(%p) already destroyed", ug);
 	} else if (ug->layout_state == UG_LAYOUT_SHOWEFFECT) {
 		ug->layout_state = UG_LAYOUT_SHOW;
-		if((show_end_cb)&&(ug->state == UG_STATE_CREATED))
+		if ((show_end_cb) && (ug->state == UG_STATE_CREATED))
 			show_end_cb(ug);
 	} else {
 		_ERR("wrong state(%d)", ug->layout_state);
@@ -291,7 +290,9 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 	evas_object_intercept_hide_callback_add(ug->layout,
 						__on_hideonly_cb, ug);
 
-	//if 'elm.swallow.ug' string is changed, msg team have to apply this changes.
+	/*
+	 * if 'elm.swallow.ug' string is changed, msg team have to apply this changes.
+	 */
 	elm_object_part_content_set(conform, "elm.swallow.ug", navi);
 
 	if (ug->layout_state == UG_LAYOUT_HIDEEFFECT
@@ -309,8 +310,8 @@ static void on_show_cb(void *data, Evas *e, Evas_Object *obj,
 		Elm_Object_Item *navi_top = elm_naviframe_top_item_get(navi);
 		ug->effect_layout = elm_naviframe_item_insert_after(navi,
 				navi_top, NULL, NULL, NULL, ug->layout, NULL);
-		//ug start cb
-		if(show_end_cb)
+
+		if (show_end_cb)
 			show_end_cb(ug);
 	} else {
 		_ERR("\tlayout state error!! state=%d\n", ug->layout_state);
@@ -353,7 +354,7 @@ static void *on_create(void *win, ui_gadget_h ug,
 		elm_naviframe_item_push(navi, NULL, NULL, NULL, navi_bg, NULL);
 	}
 
-	if(!show_end_cb)
+	if (!show_end_cb)
 		show_end_cb = show_cb;
 
 	evas_object_hide(ug->layout);
@@ -372,14 +373,13 @@ static void *on_request(void *data, ui_gadget_h ug, int req)
 
 	_DBG("on_request ug(%p) req(%d)", ug, req);
 
-	switch(req)
-	{
-		case UG_UI_REQ_GET_CONFORMANT :
-			ret = (void *)_get_win_conformant((Evas_Object *)data);
-			break;
-		default :
-			_WRN("wrong req id(%d)", req);
-			return NULL;
+	switch (req) {
+	case UG_UI_REQ_GET_CONFORMANT:
+		ret = (void *)_get_win_conformant((Evas_Object *)data);
+		break;
+	default:
+		_WRN("wrong req id(%d)", req);
+		return NULL;
 	}
 
 	return ret;

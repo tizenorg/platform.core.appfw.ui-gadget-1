@@ -58,9 +58,8 @@ int ug_free(ui_gadget_h ug)
 		return -1;
 	}
 
-	if (ug->module) {
+	if (ug->module)
 		ug_module_unload(ug->module);
-	}
 	if (ug->name) {
 		free((void *)ug->name);
 		ug->name = NULL;
@@ -347,7 +346,7 @@ UG_API int ug_disable_effect(ui_gadget_h ug)
 
 UG_API int ug_is_installed(const char *name)
 {
-	if(name == NULL){
+	if (name == NULL) {
 		_ERR("name is null");
 		return -1;
 	}

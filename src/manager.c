@@ -95,9 +95,8 @@ static int ug_relation_del(ui_gadget_h ug)
 		return -1;
 	}
 
-	if(p->children) {
+	if (p->children)
 		p->children = g_slist_remove(p->children, ug);
-	}
 
 	if (ug->children) {
 		g_slist_free(ug->children);
@@ -156,9 +155,8 @@ static int __ug_x_get_window_property(Display *dpy, Window win, Atom atom,
 	else {
 		if (num_ret < len)
 			len = num_ret;
-		for (i = 0; i < len; i++) {
+		for (i = 0; i < len; i++)
 			val[i] = ((unsigned long *)prop_ret)[i];
-		}
 		num = len;
 	}
 
@@ -204,21 +202,21 @@ static enum ug_event __ug_x_rotation_get(Display *dpy, Window win)
 		func_ret = UG_EVENT_ROTATE_PORTRAIT;
 	else {
 		switch (rotation) {
-			case 0:
-				func_ret = UG_EVENT_ROTATE_PORTRAIT;
-				break;
-			case 90:
-				func_ret = UG_EVENT_ROTATE_LANDSCAPE_UPSIDEDOWN;
-				break;
-			case 180:
-				func_ret = UG_EVENT_ROTATE_PORTRAIT_UPSIDEDOWN;
-				break;
-			case 270:
-				func_ret = UG_EVENT_ROTATE_LANDSCAPE;
-				break;
-			default:
-				func_ret = UG_EVENT_ROTATE_PORTRAIT;
-				break;
+		case 0:
+			func_ret = UG_EVENT_ROTATE_PORTRAIT;
+			break;
+		case 90:
+			func_ret = UG_EVENT_ROTATE_LANDSCAPE_UPSIDEDOWN;
+			break;
+		case 180:
+			func_ret = UG_EVENT_ROTATE_PORTRAIT_UPSIDEDOWN;
+			break;
+		case 270:
+			func_ret = UG_EVENT_ROTATE_LANDSCAPE;
+			break;
+		default:
+			func_ret = UG_EVENT_ROTATE_PORTRAIT;
+			break;
 		}
 	}
 
@@ -258,7 +256,7 @@ static void ugman_tree_dump(ui_gadget_h ug)
 		_DBG("[%d] %s [%c] (mem : %s) (ug : %p) (PARENT:  %s)",
 		     lv,
 		     c && c->name ? c->name : "NO CHILD INFO FIXIT!!!",
-		     c && c->mode == UG_MODE_FULLVIEW ? 'F' : 'f', 
+		     c && c->mode == UG_MODE_FULLVIEW ? 'F' : 'f',
 			 c->module->addr, c, name);
 		ugman_tree_dump(c);
 		child = g_slist_next(child);
@@ -393,7 +391,7 @@ static int ugman_indicator_overlap_update(enum ug_option opt)
 		return -1;
 	}
 
-	if(GET_OPT_OVERLAP_VAL(opt)) {
+	if (GET_OPT_OVERLAP_VAL(opt)) {
 		_DBG("update overlap indicator / opt(%d)", opt);
 		elm_object_signal_emit(ug_man.conform, "elm,state,indicator,overlap", "");
 	} else {
@@ -466,20 +464,20 @@ static int ugman_ug_destroy(void *data)
 	_DBG("ug(%p) state(%d)", ug, ug->state);
 
 	switch (ug->state) {
-		case UG_STATE_CREATED:
-		case UG_STATE_RUNNING:
-		case UG_STATE_STOPPED:
-		case UG_STATE_DESTROYING:
-		case UG_STATE_PENDING_DESTROY:
-			break;
-		default:
-			_WRN("ug(%p) state is already destroyed", ug);
-			goto end;
+	case UG_STATE_CREATED:
+	case UG_STATE_RUNNING:
+	case UG_STATE_STOPPED:
+	case UG_STATE_DESTROYING:
+	case UG_STATE_PENDING_DESTROY:
+		break;
+	default:
+		_WRN("ug(%p) state is already destroyed", ug);
+		goto end;
 	}
 
 	ug->state = UG_STATE_DESTROYED;
 
-	if((ug != ug_man.root) && (ug->layout) &&
+	if ((ug != ug_man.root) && (ug->layout) &&
 		(ug->mode == UG_MODE_FULLVIEW) &&
 		(ug->layout_state != UG_LAYOUT_DESTROY)) {
 		/* ug_destroy_all case */
@@ -506,8 +504,8 @@ static int ugman_ug_destroy(void *data)
 		cbs->end_cb(ug, cbs->priv);
 	}
 
-	if((ug->parent) && (ug->parent->state == UG_STATE_PENDING_DESTROY)) {
-		if((ug->parent->children) && (g_slist_length(ug->parent->children) == 1)) {
+	if ((ug->parent) && (ug->parent->state == UG_STATE_PENDING_DESTROY)) {
+		if ((ug->parent->children) && (g_slist_length(ug->parent->children) == 1)) {
 			_WRN("pended parent ug(%p) destroy job is added to loop", ug->parent);
 			ugman_idler_add((Idle_Cb)ugman_ug_destroy, ug->parent);
 		} else {
@@ -521,7 +519,7 @@ static int ugman_ug_destroy(void *data)
 	if (ug->mode == UG_MODE_FULLVIEW) {
 		if (ug_man.fv_top == ug) {
 			ug_fvlist_del(ug);
-			if(!ug_man.destroy_all)
+			if (!ug_man.destroy_all)
 				ugman_ug_getopt(ug_man.fv_top);
 		} else {
 			ug_fvlist_del(ug);
@@ -582,7 +580,7 @@ static int ugman_ug_create(void *data)
 		if (ug->mode == UG_MODE_FULLVIEW) {
 			if (eng_ops && eng_ops->create) {
 				ug_man.conform = eng_ops->create(ug_man.win, ug, ugman_ug_start);
-				if(!ug_man.conform)
+				if (!ug_man.conform)
 					return -1;
 			}
 		}
@@ -595,14 +593,14 @@ static int ugman_ug_create(void *data)
 		ugman_indicator_update(ug->opt, UG_EVENT_NONE);
 	}
 
-	if(ug_man.last_rotate_evt == UG_EVENT_NONE) {
+	if (ug_man.last_rotate_evt == UG_EVENT_NONE) {
 #ifndef UG_WAYLAND
 		ug_man.last_rotate_evt = __ug_x_rotation_get(ug_man.disp, ug_man.win_id);
 #endif
 	}
 	ugman_ug_event(ug, ug_man.last_rotate_evt);
 
-	if(ug->mode == UG_MODE_FRAMEVIEW)
+	if (ug->mode == UG_MODE_FRAMEVIEW)
 		ugman_ug_start(ug);
 
 	ugman_tree_dump(ug_man.root);
@@ -638,12 +636,12 @@ int ugman_ug_add(ui_gadget_h parent, ui_gadget_h ug)
 		parent = ug_man.root;
 	} else {
 		switch (parent->state) {
-			case UG_STATE_DESTROYING:
-			case UG_STATE_PENDING_DESTROY:
-			case UG_STATE_DESTROYED:
-				_WRN("parent(%p) state(%d) error", parent, parent->state);
-				return -1;
-			default:;
+		case UG_STATE_DESTROYING:
+		case UG_STATE_PENDING_DESTROY:
+		case UG_STATE_DESTROYED:
+			_WRN("parent(%p) state(%d) error", parent, parent->state);
+			return -1;
+		default:;
 		}
 	}
 
@@ -775,17 +773,16 @@ int ugman_ug_del(ui_gadget_h ug)
 		if (ug->children) {
 			GSList *child;
 			child = g_slist_last(ug->children);
-			if(ug_man.fv_top == (ui_gadget_h)child->data) {
+			if (ug_man.fv_top == (ui_gadget_h)child->data) {
 				is_update = true;
 				t = g_slist_nth_data(ug_man.fv_list,
-					g_slist_index(ug_man.fv_list,(gconstpointer)ug)+1);
+					g_slist_index(ug_man.fv_list, (gconstpointer)ug) + 1);
 			}
 		}
 	}
 
-	if((is_update)&&(t)) {
+	if ((is_update) && (t))
 		ugman_ug_getopt(t);
-	}
 
 	if (ug_man.engine)
 		eng_ops = &ug_man.engine->ops;
@@ -840,11 +837,10 @@ int ugman_ug_del_all(void)
 
 	_DBG("ug_del_all. root(%p) walking(%d) ", ug_man.root, ug_man.walking);
 
-	if (ug_man.walking > 0) {
+	if (ug_man.walking > 0)
 		ug_man.destroy_all = 1;
-	} else {
+	else
 		ugman_ug_del_child(ug_man.root);
-	}
 
 	return 0;
 }
@@ -858,9 +854,8 @@ int ugman_init(Display *disp, Window xid, void *win, enum ug_option opt)
 	ug_man.base_opt = opt;
 	ug_man.last_rotate_evt = UG_EVENT_NONE;
 
-	if (!ug_man.is_initted) {
+	if (!ug_man.is_initted)
 		ug_man.engine = ug_engine_load();
-	}
 
 	ug_man.is_initted = 1;
 
@@ -873,9 +868,8 @@ int ugman_init(void *win, enum ug_option opt)
 	ug_man.base_opt = opt;
 	ug_man.last_rotate_evt = UG_EVENT_NONE;
 
-	if (!ug_man.is_initted) {
+	if (!ug_man.is_initted)
 		ug_man.engine = ug_engine_load();
-	}
 
 	ug_man.is_initted = 1;
 
@@ -886,13 +880,13 @@ int ugman_init(void *win, enum ug_option opt)
 int ugman_init_efl(Evas_Object *win, enum ug_option opt)
 {
 #ifndef UG_WAYLAND
-    Ecore_X_Window xwin = elm_win_xwindow_get(win);
-    if (xwin)
-        return ugman_init((Display *)ecore_x_display_get(), xwin, win, opt);
+	Ecore_X_Window xwin = elm_win_xwindow_get(win);
+	if (xwin)
+		return ugman_init((Display *)ecore_x_display_get(), xwin, win, opt);
 #else
-     return ugman_init(win, opt);
+	return ugman_init(win, opt);
 #endif
-    return -1;
+	return -1;
 }
 
 int ugman_resume(void)
@@ -993,17 +987,15 @@ static int ugman_send_key_event_to_ug(ui_gadget_h ug,
 	if (!ug)
 		return -1;
 
-	if (ug->module) {
+	if (ug->module)
 		ops = &ug->module->ops;
-	} else {
+	else
 		return -1;
-	}
 
-	if (ops && ops->key_event) {
+	if (ops && ops->key_event)
 		ops->key_event(ug, event, ug->app_control, ops->priv);
-	} else {
+	else
 		return -1;
-	}
 
 	return 0;
 }
@@ -1058,7 +1050,7 @@ void *ugman_get_conformant(void)
 	struct ug_engine_ops *eng_ops = NULL;
 	void* ret = NULL;
 
-	if(ug_man.conform) {
+	if (ug_man.conform) {
 		_DBG("return cached conform(%p) info", ug_man.conform);
 		return ug_man.conform;
 	}

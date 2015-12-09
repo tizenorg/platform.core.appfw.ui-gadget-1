@@ -69,17 +69,16 @@ static char *__ug_module_get_addr(const char *ug_name)
 	snprintf(buf, sizeof(buf), "/proc/%d/maps", getpid());
 
 	file = fopen(buf, "r");
-    if (file == NULL) {
+	if (file == NULL) {
 		_WRN("proc open fail(%d)", errno);
 		goto func_out;
 	}
 
 	memset(buf, 0x00, PATH_MAX);
 
-	while(fgets(buf, PATH_MAX, file) !=  NULL)
-	{
+	while (fgets(buf, PATH_MAX, file) != NULL) {
 		if (strstr(buf, ug_name)) {
-			token_param = strtok_r(buf," ", &saveptr);
+			token_param = strtok_r(buf, " ", &saveptr);
 			if ((token_param == NULL) || (strlen(token_param) > MEM_ADDR_TOT_LEN)) {
 				_ERR("proc token param(%s) error", token_param);
 				goto close_out;
@@ -180,9 +179,9 @@ static int __get_ug_info(const char* name, char** ug_file_path)
 
 out_func:
 	ret = 0;
-	if ((strlen(ug_file) > 0) && (ug_file_path)) {
+	if ((strlen(ug_file) > 0) && (ug_file_path))
 		*ug_file_path = strdup(ug_file);
-	}
+
 	return ret;
 
 err_func:

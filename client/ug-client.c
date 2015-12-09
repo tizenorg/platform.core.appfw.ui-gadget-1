@@ -40,7 +40,7 @@
 #undef LOG_TAG
 #endif
 
-#define PATH_UG_LAUNCHER tzplatform_mkpath(TZ_SYS_BIN,"ug-launcher")
+#define PATH_UG_LAUNCHER tzplatform_mkpath(TZ_SYS_BIN, "ug-launcher")
 
 #define LOG_TAG "UI_GADGET_CLIENT"
 
@@ -79,22 +79,22 @@ static int ug_send_rotate_event(int angle)
 {
 	int ret = -1;
 	LOGD("ug_send_rotate_event angle : %d", angle);
-	switch(angle) {
-		case 0 :
-			ret = ug_send_event(UG_EVENT_ROTATE_PORTRAIT);
-			break;
-		case 90 :
-			ret = ug_send_event(UG_EVENT_ROTATE_LANDSCAPE_UPSIDEDOWN);
-			break;
-		case 180 :
-			ret = ug_send_event(UG_EVENT_ROTATE_PORTRAIT_UPSIDEDOWN);
-			break;
-		case 270 :
-			ret = ug_send_event(UG_EVENT_ROTATE_LANDSCAPE);
-			break;
-		default :
-			LOGW("wrong angle(%d) for send rotate event",angle);
-			break;
+	switch (angle) {
+	case 0:
+		ret = ug_send_event(UG_EVENT_ROTATE_PORTRAIT);
+		break;
+	case 90:
+		ret = ug_send_event(UG_EVENT_ROTATE_LANDSCAPE_UPSIDEDOWN);
+		break;
+	case 180:
+		ret = ug_send_event(UG_EVENT_ROTATE_PORTRAIT_UPSIDEDOWN);
+		break;
+	case 270:
+		ret = ug_send_event(UG_EVENT_ROTATE_LANDSCAPE);
+		break;
+	default:
+		LOGW("wrong angle(%d) for send rotate event", angle);
+		break;
 	}
 
 	return ret;
@@ -106,7 +106,7 @@ static void rotate(void *data, Evas_Object *obj, void *event)
 	struct appdata *ad = data;
 
 	changed_angle = elm_win_rotation_get((const Evas_Object *)obj);
-	if(changed_angle == -1) {
+	if (changed_angle == -1) {
 		LOGE("elm_win_rotation_get error");
 		return;
 	}
@@ -114,9 +114,8 @@ static void rotate(void *data, Evas_Object *obj, void *event)
 	LOGD("rotate call back : changed angle(%d) / current angle(%d)",
 		changed_angle, ad->rotate);
 
-	if(ad->rotate != changed_angle) {
+	if (ad->rotate != changed_angle)
 		ug_send_rotate_event(changed_angle);
-	}
 
 	ad->rotate = changed_angle;
 
@@ -165,8 +164,8 @@ void _ug_client_result_cb(ui_gadget_h ug, app_control_h reply, void *priv)
 	if (!ug || !priv)
 		return;
 
-	ret = app_control_get_extra_data (reply, UG_SERVICE_DATA_RESULT, &value);
-	if((ret == APP_CONTROL_ERROR_NONE) && (value)) {
+	ret = app_control_get_extra_data(reply, UG_SERVICE_DATA_RESULT, &value);
+	if ((ret == APP_CONTROL_ERROR_NONE) && (value)) {
 		result = atoi(value);
 		LOGD("reply result is %d", result);
 	} else {
@@ -223,7 +222,7 @@ static Evas_Object *create_win(const char *name)
 		elm_win_conformant_set(eo, EINA_TRUE);
 		evas_object_smart_callback_add(eo, "delete,request",
 					       win_del, NULL);
-		elm_win_indicator_mode_set(eo,ELM_WIN_INDICATOR_SHOW);
+		elm_win_indicator_mode_set(eo, ELM_WIN_INDICATOR_SHOW);
 	}
 
 	return eo;
@@ -263,7 +262,7 @@ static int lang_changed(void *event_info, void *data)
 	char* lang = NULL;
 
 	lang = vconf_get_str(VCONFKEY_LANGSET);
-	if(lang) {
+	if (lang) {
 		LOGD("lang : %s", lang);
 		elm_language_set((const char*)lang);
 		free(lang);
@@ -321,14 +320,14 @@ static int app_create(void *data)
 	int angle = -1;
 	angle = elm_win_rotation_get((const Evas_Object *)win);
 	LOGE("rotate : %d", angle);
-	if(angle != -1) {
+	if (angle != -1) {
 		ug_send_rotate_event(angle);
 		ad->rotate = angle;
 	} else {
 		LOGE("elm win rotation get error");
 	}
     /*
-	if(elm_win_wm_rotation_supported_get(win)) {
+	if (elm_win_wm_rotation_supported_get(win)) {
 		int rots[4] = { 0, 90, 180, 270 };
 		elm_win_wm_rotation_available_rotations_set(win, (const int*)&rots, 4);
 	} else {
@@ -349,7 +348,7 @@ static void _ug_client_home_screen_top_cb(void *data)
 {
 	struct appdata *ad = data;
 
-	if((!ad->is_transient) && (home_screen_pid)) {
+	if ((!ad->is_transient) && (home_screen_pid)) {
 		LOGW("home key pressed. window is not transient. ug client will be terminated");
 		elm_exit();
 	}
@@ -400,7 +399,7 @@ _ug_client_dbus_signal_filter(DBusConnection *conn, DBusMessage *message,
 
 		home_screen_pid = home_pid_by_dbus;
 
-		if(is_app_pause) {
+		if (is_app_pause) {
 			LOGD("home_launch signal under app_pause.\
 					if home screen is top, app will be terminated");
 			_ug_client_home_screen_top_cb(user_data);
@@ -461,7 +460,7 @@ static void _ug_client_dbus_signal_handler_fini(void *data)
 	if (!ug_dbus_signal_handler_initialized)
 		return;
 
-	if(!dbus_connection_get_is_connected(bus)) {
+	if (!dbus_connection_get_is_connected(bus)) {
 		LOGD("dbus connection(%p) is not connected", bus);
 		goto func_out;
 	}
@@ -484,7 +483,7 @@ static void _ug_client_dbus_signal_handler_fini(void *data)
 
 	LOGD("ug dbus signal finialized");
 
-func_out :
+func_out:
 	ug_dbus_signal_handler_initialized = 0;
 	bus = NULL;
 
@@ -515,9 +514,8 @@ static int app_terminate(void *data)
 
 	app_control_destroy(ad->request);
 
-	if (ad->name) {
+	if (ad->name)
 		free(ad->name);
-	}
 
 	LOGD("app_terminate end");
 
@@ -561,9 +559,8 @@ static int app_reset(bundle *b, void *data)
 
 	if (ret) {
 		LOGD("fail to request transient app: return value(%d)", ret);
-		if(_ug_client_dbus_listen_signal(data) < 0) {
+		if (_ug_client_dbus_listen_signal(data) < 0)
 			LOGW("home screen dbus register error");
-		}
 	} else {
 		/* check home screen raise */
 		ad->is_transient = 1;
@@ -579,7 +576,7 @@ static int app_reset(bundle *b, void *data)
 	else
 		app_control_create_event(b, &app_control);
 
-	if(app_control) {
+	if (app_control) {
 		app_control_clone(&ad->request, app_control);
 		app_control_destroy(app_control);
 	}
@@ -668,7 +665,7 @@ int main(int argc, char *argv[])
 			prt_usage(argv[0]);
 			return -1;
 		}
-		argc = 1; // remove appsvc bundle
+		argc = 1; /* remove appsvc bundle */
 	} else {	/* ug-client */
 		char *name = NULL;
 		name = strrchr(argv[0], '/');
