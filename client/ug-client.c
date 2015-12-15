@@ -612,7 +612,7 @@ static int update_argument(const char *optarg, struct appdata *ad)
 		ad->data = bundle_create();
 	if (!ad->data)
 		return -1;
-	bundle_add(ad->data, key, val);
+	bundle_add_str(ad->data, key, val);
 	return 0;
 }
 
