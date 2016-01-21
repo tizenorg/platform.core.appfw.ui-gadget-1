@@ -163,6 +163,13 @@ static int __get_ug_info(const char* name, char** ug_file_path)
 			LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
 			goto out_func;
 		} else {
+			snprintf(ug_file, sizeof(ug_file), "%s/%s/lib/ug/lib%s.so",
+				tzplatform_getenv(TZ_SYS_RW_APP), pkg_name, name);
+			if (file_exist(ug_file)) {
+				LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
+				goto out_func;
+			}
+
 			LOGD("ug_file(%s) check fail(%d)", ug_file, errno);
 		}
 		/* Downloadable CORE APP(TPK) */
