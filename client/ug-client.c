@@ -619,6 +619,7 @@ static int update_argument(const char *optarg, struct appdata *ad)
 int main(int argc, char *argv[])
 {
 	int opt;
+	int ret;
 	struct appdata ad;
 	struct appcore_ops ops = {
 		.create = app_create,
@@ -674,5 +675,12 @@ int main(int argc, char *argv[])
 		/* .../bin/{name} */
 		ad.name = strdup(&name[1]);
 	}
-	return appcore_efl_main(PACKAGE, &argc, &argv, &ops);
+
+	ret = appcore_efl_main(PACKAGE, &argc, &argv, &ops);
+	if (ret)
+		LOGE("appcore_efl_main failed with error : %d", ret);
+	if (ad.name)
+		free(ad.name);
+
+	return ret;
 }
