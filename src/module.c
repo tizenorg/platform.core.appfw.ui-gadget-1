@@ -28,8 +28,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 
-#include <app_manager.h>
-#include <pkgmgr-info.h>
+#include <aul.h>
 
 #include "ug-module.h"
 #include "ug-dbg.h"
@@ -113,10 +112,9 @@ func_out:
 
 static int __get_ug_info(const char* name, char** ug_file_path)
 {
-	char ug_file[PATH_MAX] = {0,};
-	char pkg_name[PATH_MAX] = {0,};
-	int ret = -1;
-	char *pkg_id = NULL;
+	char ug_file[PATH_MAX];
+	char app_id[NAME_MAX];
+	char *path;
 
 	snprintf(ug_file, PATH_MAX, "%s/lib/libug-%s.so",
 			tzplatform_getenv(TZ_SYS_RO_UG), name);
@@ -126,8 +124,8 @@ static int __get_ug_info(const char* name, char** ug_file_path)
 	} else {
 		LOGD("ug_file(%s) check fail(%d)", ug_file, errno);
 	}
-	snprintf(ug_file, PATH_MAX, "%s/lib/libug-%s.so",
-			tzplatform_getenv(TZ_SYS_RW_UG), name);
+	snprintf(ug_file, PATH_MAX, "%s/lib/lib%s.so",
+			tzplatform_getenv(TZ_SYS_RO_UG), name);
 	if (file_exist(ug_file)) {
 		LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
 		goto out_func;
@@ -135,65 +133,38 @@ static int __get_ug_info(const char* name, char** ug_file_path)
 		LOGD("ug_file(%s) check fail(%d)", ug_file, errno);
 	}
 
-	/* Get pkg name by appid */
-	pkgmgrinfo_appinfo_h handle;
-	ret = pkgmgrinfo_appinfo_get_appinfo(name, &handle);
-
-	if (ret != PMINFO_R_OK) {
-		SECURE_LOGD("fail to get app info using ug name(%s)", name);
-		goto err_func;
+	if (aul_get_app_shared_resource_path_by_appid(name, &path) == AUL_R_OK) {
+		snprintf(ug_file, PATH_MAX, "%slib/ug/lib%s.so", path, name);
+		free(path);
+		if (file_exist(ug_file)) {
+			LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
+			goto out_func;
+		} else {
+			LOGD("ug_file(%s) check fail(%d)", ug_file, errno);
+		}
 	}
-	ret = pkgmgrinfo_appinfo_get_pkgid(handle, &pkg_id);
-	if (ret != PMINFO_R_OK) {
-		_DBG("fail to get pkgid from appinfo handle");
-		pkgmgrinfo_appinfo_destroy_appinfo(handle);
-		goto err_func;
+
+	if (aul_app_get_appid_bypid_for_uid(getpid(), app_id,
+							   sizeof(app_id), getuid()) != AUL_R_OK)
+		return -1;
+
+	if (strncmp(name, app_id, sizeof(app_id)))
+		return -1;
+
+	snprintf(ug_file, PATH_MAX, "%slib/ug/lib%s.so",
+			aul_get_app_root_path(), name);
+	if (file_exist(ug_file)) {
+		LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
+		goto out_func;
 	} else {
-		SECURE_LOGD("pkg id: %s\n", pkg_id);
-		snprintf(pkg_name, PATH_MAX, "%s", pkg_id);
-	}
-
-	pkgmgrinfo_appinfo_destroy_appinfo(handle);
-
-	if (strlen(pkg_name)) {
-		/* FOTA UPDATE CORE APP(RPM) */
-		snprintf(ug_file, PATH_MAX, "%s/%s/lib/ug/lib%s.so",
-				tzplatform_getenv(TZ_SYS_RO_APP), pkg_name, name);
-		if (file_exist(ug_file)) {
-			LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
-			goto out_func;
-		} else {
-			snprintf(ug_file, sizeof(ug_file), "%s/%s/lib/ug/lib%s.so",
-				tzplatform_getenv(TZ_SYS_RW_APP), pkg_name, name);
-			if (file_exist(ug_file)) {
-				LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
-				goto out_func;
-			}
-
-			LOGD("ug_file(%s) check fail(%d)", ug_file, errno);
-		}
-		/* Downloadable CORE APP(TPK) */
-		snprintf(ug_file, PATH_MAX, "%s/%s/lib/ug/lib%s.so",
-				tzplatform_getenv(TZ_USER_APP), pkg_name, name);
-		if (file_exist(ug_file)) {
-			LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
-			goto out_func;
-		} else {
-			LOGD("ug_file(%s) check fail(%d)", ug_file, errno);
-		}
-		LOGD("ug_file(%s) does not exist(%d)", ug_file, errno);
+		LOGD("ug_file(%s) check fail(%d)", ug_file, errno);
 	}
 
 out_func:
-	ret = 0;
 	if ((strlen(ug_file) > 0) && (ug_file_path))
 		*ug_file_path = strdup(ug_file);
 
-	return ret;
-
-err_func:
-
-	return -1;
+	return 0;
 }
 
 struct ug_module *ug_module_load(const char *name)
