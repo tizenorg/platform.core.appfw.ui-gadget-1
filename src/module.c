@@ -29,6 +29,7 @@
 #include <sys/types.h>
 
 #include <aul.h>
+#include <pkgmgr-info.h>
 
 #include "ug-module.h"
 #include "ug-dbg.h"
@@ -40,17 +41,6 @@
 
 #define MEM_ADDR_LEN 8
 #define MEM_ADDR_TOT_LEN 17
-
-static int file_exist(const char *filename)
-{
-	FILE *file;
-	if ((file = fopen(filename, "r"))) {
-		fclose(file);
-		return 1;
-	}
-
-	return 0;
-}
 
 static char *__ug_module_get_addr(const char *ug_name)
 {
@@ -110,59 +100,85 @@ func_out:
 		return NULL;
 }
 
-static int __get_ug_info(const char* name, char** ug_file_path)
+static int __file_exist(const char *path)
+{
+	int ret;
+
+	ret = access(path, R_OK);
+	LOGD("ug_file(%s) check %s", path, ret ? "fail" : "ok");
+
+	return ret;
+}
+
+static int __get_ug_info(const char *name, char **ug_file_path)
 {
 	char ug_file[PATH_MAX];
 	char app_id[NAME_MAX];
-	char *path;
+	char *root_path;
+	char *res_path = NULL;
+	pkgmgrinfo_appinfo_h appinfo = NULL;
 
+	/* get path using name */
 	snprintf(ug_file, PATH_MAX, "%s/lib/libug-%s.so",
 			tzplatform_getenv(TZ_SYS_RO_UG), name);
-	if (file_exist(ug_file)) {
-		LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
+	if (!__file_exist(ug_file))
 		goto out_func;
-	} else {
-		LOGD("ug_file(%s) check fail(%d)", ug_file, errno);
-	}
 	snprintf(ug_file, PATH_MAX, "%s/lib/lib%s.so",
 			tzplatform_getenv(TZ_SYS_RO_UG), name);
-	if (file_exist(ug_file)) {
-		LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
+	if (!__file_exist(ug_file))
 		goto out_func;
-	} else {
-		LOGD("ug_file(%s) check fail(%d)", ug_file, errno);
-	}
 
-	if (aul_get_app_shared_resource_path_by_appid(name, &path) == AUL_R_OK) {
-		snprintf(ug_file, PATH_MAX, "%slib/ug/lib%s.so", path, name);
-		free(path);
-		if (file_exist(ug_file)) {
-			LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
-			goto out_func;
-		} else {
-			LOGD("ug_file(%s) check fail(%d)", ug_file, errno);
-		}
-	}
-
-	if (aul_app_get_appid_bypid_for_uid(getpid(), app_id,
-				sizeof(app_id), getuid()) != AUL_R_OK)
+	/* get path using appid */
+	if (aul_app_get_appid_bypid(getpid(), app_id, sizeof(app_id))) {
+		LOGE("failed to get appid");
 		return -1;
-
-	if (strncmp(name, app_id, sizeof(app_id)))
+	}
+	if (pkgmgrinfo_appinfo_get_usr_appinfo(app_id, getuid(), &appinfo)) {
+		LOGE("failed to get app info");
 		return -1;
-
-	snprintf(ug_file, PATH_MAX, "%slib/ug/lib-ug%s.so",
-			aul_get_app_root_path(), name);
-	if (file_exist(ug_file)) {
-		LOGD("ug_file(%s) check ok(%d)", ug_file, errno);
+	}
+	snprintf(ug_file, PATH_MAX, "%s/lib/libug-%s.so",
+			tzplatform_getenv(TZ_SYS_RO_UG), app_id);
+	if (!__file_exist(ug_file))
 		goto out_func;
-	} else {
-		LOGD("ug_file(%s) check fail(%d)", ug_file, errno);
+	snprintf(ug_file, PATH_MAX, "%s/lib/lib%s.so",
+			tzplatform_getenv(TZ_SYS_RO_UG), app_id);
+	if (!__file_exist(ug_file))
+		goto out_func;
+
+	/* get path using appid and root path */
+	if (pkgmgrinfo_appinfo_get_root_path(appinfo, &root_path)) {
+		LOGE("failed to get app root path");
+		pkgmgrinfo_appinfo_destroy_appinfo(appinfo);
+		return -1;
 	}
+	snprintf(ug_file, PATH_MAX, "%s/lib/ug/libug-%s.so", root_path, app_id);
+	if (!__file_exist(ug_file))
+		goto out_func;
+	snprintf(ug_file, PATH_MAX, "%s/lib/ug/lib%s.so", root_path, app_id);
+	if (!__file_exist(ug_file))
+		goto out_func;
+
+	/* get path using appid and shared resource path */
+	if (aul_get_app_shared_resource_path_by_appid(app_id, &res_path)) {
+		LOGE("failed to get shared resource path");
+		pkgmgrinfo_appinfo_destroy_appinfo(appinfo);
+		return -1;
+	}
+	snprintf(ug_file, PATH_MAX, "%s/lib/ug/libug-%s.so", res_path, app_id);
+	if (!__file_exist(ug_file))
+		goto out_func;
+	snprintf(ug_file, PATH_MAX, "%s/lib/ug/lib-%s.so", res_path, app_id);
+	if (!__file_exist(ug_file))
+		goto out_func;
 
 out_func:
 	if ((strlen(ug_file) > 0) && (ug_file_path))
 		*ug_file_path = strdup(ug_file);
+
+	free(res_path);
+	if (appinfo)
+		pkgmgrinfo_appinfo_destroy_appinfo(appinfo);
 
 	return 0;
 }
