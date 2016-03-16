@@ -142,7 +142,7 @@ static int __get_ug_info(const char *name, char **ug_file_path)
 	if (!__file_exist(ug_file))
 		goto out_func;
 
-	/* get path using appid and root path */
+	/* get app root path */
 	if (pkgmgrinfo_appinfo_get_usr_appinfo(app_id, getuid(), &appinfo)) {
 		LOGE("failed to get app info");
 		return -1;
@@ -152,6 +152,16 @@ static int __get_ug_info(const char *name, char **ug_file_path)
 		pkgmgrinfo_appinfo_destroy_appinfo(appinfo);
 		return -1;
 	}
+	/* get path using name and root path.
+	 * in this case, try to get ug app's library in the same pacakge.
+	 */
+	snprintf(ug_file, PATH_MAX, "%s/lib/ug/libug-%s.so", root_path, name);
+	if (!__file_exist(ug_file))
+		goto out_func;
+	snprintf(ug_file, PATH_MAX, "%s/lib/ug/lib%s.so", root_path, name);
+	if (!__file_exist(ug_file))
+		goto out_func;
+	/* get path using appid and root path */
 	snprintf(ug_file, PATH_MAX, "%s/lib/ug/libug-%s.so", root_path, app_id);
 	if (!__file_exist(ug_file))
 		goto out_func;
