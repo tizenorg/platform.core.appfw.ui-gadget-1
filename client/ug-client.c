@@ -602,7 +602,9 @@ static int update_argument(const char *optarg, struct appdata *ad)
 {
 	const char *key;
 	const char *val;
-	key = strtok((char *)optarg, ",");
+	char *saveptr;
+
+	key = strtok_r((char *)optarg, ",", &saveptr);
 	if (!key)
 		return -1;
 
