@@ -44,6 +44,12 @@
 #define ugman_idler_add(func, data)  \
 	ecore_job_add((Ecore_Cb) func, (void *)data);
 
+#ifdef ENABLE_UG_CREATE_CB
+typedef void (*fn_ug_trace_cb)(char *ug, char *mem, char *parent, void *user_data);
+fn_ug_trace_cb g_create_cb;
+void *g_create_cb_user_data;
+#endif
+
 struct ug_manager {
 	ui_gadget_h root;
 	ui_gadget_h fv_top;
@@ -605,6 +611,19 @@ static int ugman_ug_create(void *data)
 
 	ugman_tree_dump(ug_man.root);
 
+#ifdef ENABLE_UG_CREATE_CB
+	if (g_create_cb) {
+		ui_gadget_h parent = ug->parent;
+
+		_DBG("invoke trace create cb(%p)", g_create_cb);
+
+		g_create_cb((char *)ug->name, (char *)ug->module->addr,
+				parent ? (char *)parent->name : NULL,
+				g_create_cb_user_data);
+	}
+#endif
+
+
 	return 0;
 }
 
@@ -909,6 +928,25 @@ int ugman_resume(void)
 	return 0;
 }
 
+int ugman_resume_ug(ui_gadget_h ug)
+{
+	if (!ug_man.is_initted) {
+		_ERR("ugman_pause_ug failed: manager is not initialized");
+		return -1;
+	}
+
+	if (!ug_man.root || !ug) {
+		_WRN("ugman_pause_ug failed: no root");
+		return -1;
+	}
+
+	_DBG("ugman_resume_ug called");
+
+	ugman_idler_add((Idle_Cb)ugman_ug_resume, ug);
+
+	return 0;
+}
+
 int ugman_pause(void)
 {
 	/* PAUSE (Background) */
@@ -925,6 +963,25 @@ int ugman_pause(void)
 	_DBG("ugman_pause called");
 
 	ugman_idler_add((Idle_Cb)ugman_ug_pause, ug_man.root);
+
+	return 0;
+}
+
+int ugman_pause_ug(ui_gadget_h ug)
+{
+	if (!ug_man.is_initted) {
+		_ERR("ugman_pause_ug failed: manager is not initialized");
+		return -1;
+	}
+
+	if (!ug_man.root || !ug) {
+		_WRN("ugman_pause_ug failed: no root");
+		return -1;
+	}
+
+	_DBG("ugman_pause_ug called");
+
+	ugman_idler_add((Idle_Cb)ugman_ug_pause, ug);
 
 	return 0;
 }
@@ -1097,3 +1154,20 @@ int ugman_ug_exist(ui_gadget_h ug)
 {
 	return ugman_ug_find(ug_man.root, ug);
 }
+
+#ifdef ENABLE_UG_CREATE_CB
+int ugman_create_cb(void (*create_cb)(char *, char *, char *, void *), void *user_data)
+{
+	if (create_cb == NULL) {
+		_DBG("disable trace create cb");
+		g_create_cb_user_data = NULL;
+		g_create_cb = NULL;
+	} else {
+		_DBG("enable trace create cb(%p)", create_cb);
+		g_create_cb_user_data = user_data;
+		g_create_cb = create_cb;
+	}
+
+	return 0;
+}
+#endif

@@ -43,7 +43,9 @@ int ugman_init(void *win, enum ug_option opt);
 int ugman_init_efl(Evas_Object *win, enum ug_option opt);
 
 int ugman_resume(void);
+int ugman_resume_ug(ui_gadget_h ug);
 int ugman_pause(void);
+int ugman_pause_ug(ui_gadget_h ug);
 int ugman_send_event(enum ug_event event);
 int ugman_send_key_event(enum ug_key_event event);
 int ugman_send_message(ui_gadget_h ug, app_control_h msg);
@@ -52,5 +54,9 @@ void *ugman_get_window(void);
 void *ugman_get_conformant(void);
 
 int ugman_ug_exist(ui_gadget_h ug);
+
+#ifdef ENABLE_UG_CREATE_CB
+int ugman_create_cb(void (*create_cb)(char *, char *, char *, void *), void *user_data);
+#endif
 
 #endif				/* __UG_MANAGER_H__ */
