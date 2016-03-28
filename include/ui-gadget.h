@@ -813,6 +813,78 @@ int ug_disable_effect(ui_gadget_h ug);
  */
 int ug_is_installed(const char *name);
 
+/**
+ * @brief Pauses the given UI gadget instance.
+ *
+ * @details @b Purpose: This function is used to pause the specified UI gadget instance and its children in the "Running" state. Eventually, the state of the UI gadget instance will be "Stopped".
+ *
+ * @details @b Typical @b use @b case: Application developers who want to pause the specified UI gadget instance can use this function.
+ *
+ * @details @b Method @b of @b function @b operation: "Pause" state operations of the UI gadgets with the "Running" state in the sub-tree that has the specified UI gadget as the root node are invoked by post-order traversal.
+ *
+ *          @b Context @b of @b function: This function is supposed to be called after successful initialization with ug_init() and creation of ug_create().
+ *
+ * @since_tizen 2.4
+ *
+ * @param[in] ug The UI gadget
+ *
+ * @return  @c 0 on success,
+ *          otherwise @c -1 on error
+ *
+ * @pre ug_init() should be called.
+ *	ug_create() should be used to create the @a ug gadget.
+ *
+ * @see ug_resume_ug()
+ *
+ * @par Sample code:
+ * @code
+ * #include <ui-gadget.h>
+ * ...
+ * // pauses the given UI gadget instance.
+ * ug_pause_ug(ug);
+ * ...
+ * @endcode
+ */
+int ug_pause_ug(ui_gadget_h ug);
+
+/**
+ * @brief Resumes the given UI gadget instance.
+ *
+ * @details @b Purpose: This function is used to resume the specified UI gadget instance and its children in the "Stopped" state. Eventually, the state of the UI gadget instance will be "Running".
+ *
+ * @details @b Typical @b use @b case: Application developers who want to resume the specified UI gadget instance can use this function.
+ *
+ * @details @b Method @b of @b function @b operation: "Resume" state operations of the UI gadgets with the "Stopped" state in the sub-tree that has specified UI gadget as the root node are invoked by post-order traversal.
+ *
+ * @details @b Context @b of @b function: This function should be called after successful initialization by ug_init() and creation of ug_create().
+ *
+ * @since_tizen 2.4
+ *
+ * @param[in] ug The UI gadget
+ *
+ * @return  @c 0 on success,
+ *          otherwise @c -1 on error
+ *
+ * @pre ug_init() should be called.
+ *	ug_create() should be used to create the @a ug gadget.
+ *
+ * @see ug_pause_ug()
+ *
+ * @par Sample code:
+ * @code
+ * #include <ui-gadget.h>
+ * ...
+ * // resumes the given UI gadget instance.
+ * ug_resume_ug(ug);
+ * ...
+ * @endcode
+ */
+int ug_resume_ug(ui_gadget_h ug);
+
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif
