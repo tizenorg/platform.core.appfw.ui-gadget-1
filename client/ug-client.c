@@ -602,7 +602,7 @@ static int update_argument(const char *optarg, struct appdata *ad)
 {
 	const char *key;
 	const char *val;
-	char *saveptr;
+	char *saveptr = NULL;
 
 	key = strtok_r((char *)optarg, ",", &saveptr);
 	if (!key)
@@ -610,10 +610,12 @@ static int update_argument(const char *optarg, struct appdata *ad)
 
 	val = optarg + strlen(key) + 1;
 
-	if (!ad->data)
+	if (!ad->data) {
 		ad->data = bundle_create();
-	if (!ad->data)
-		return -1;
+		if (!ad->data)
+			return -1;
+	}
+
 	bundle_add_str(ad->data, key, val);
 	return 0;
 }
