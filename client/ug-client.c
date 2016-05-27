@@ -620,6 +620,7 @@ static int update_argument(const char *optarg, struct appdata *ad)
 	return 0;
 }
 
+__attribute__ ((visibility("default")))
 int main(int argc, char *argv[])
 {
 	int opt;
