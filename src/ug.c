@@ -357,6 +357,10 @@ UG_API int ug_send_message(ui_gadget_h ug, app_control_h msg)
 
 UG_API int ug_disable_effect(ui_gadget_h ug)
 {
+	if(!ug) {
+		_ERR("ug input param is null");
+		return -1;
+	}
 	if (ug->layout_state != UG_LAYOUT_INIT) {
 		_ERR("ug_disable_effect() failed: ug has already been shown");
 		return -1;
