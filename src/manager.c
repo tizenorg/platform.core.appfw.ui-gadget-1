@@ -617,7 +617,8 @@ static int ugman_ug_create(void *data)
 
 		_DBG("invoke trace create cb(%p)", g_create_cb);
 
-		g_create_cb((char *)ug->name, (char *)ug->module->addr,
+		g_create_cb((char *)ug->name,
+				ug->module ? (char *)ug->module->addr : NULL,
 				parent ? (char *)parent->name : NULL,
 				g_create_cb_user_data);
 	}
