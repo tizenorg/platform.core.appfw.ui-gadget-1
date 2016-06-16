@@ -164,7 +164,7 @@ void _ug_client_result_cb(ui_gadget_h ug, app_control_h reply, void *priv)
 	if (!ug || !priv)
 		return;
 
-	ret = app_control_get_extra_data(reply, UG_SERVICE_DATA_RESULT, &value);
+	ret = app_control_get_extra_data(reply, UG_APP_CONTROL_DATA_RESULT, &value);
 	if ((ret == APP_CONTROL_ERROR_NONE) && (value)) {
 		result = atoi(value);
 		LOGD("reply result is %d", result);

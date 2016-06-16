@@ -120,6 +120,11 @@ UG_API int ug_init(void *win, enum ug_option opt)
 }
 #endif
 
+UG_API int UG_INIT_EFL(void *win, enum ug_option opt)
+{
+	return ug_init_efl((Evas_Object *)win, opt);
+}
+
 UG_API int ug_init_efl(Evas_Object *win, enum ug_option opt)
 {
 	if (!win) {
@@ -132,7 +137,7 @@ UG_API int ug_init_efl(Evas_Object *win, enum ug_option opt)
 		return -1;
 	}
 
-	return ugman_init_efl(win, opt);
+	return ugman_init_efl((Evas_Object *)win, opt);
 }
 
 UG_API int ug_pause(void)
@@ -324,7 +329,7 @@ UG_API int ug_send_result_full(ui_gadget_h ug, app_control_h send, app_control_r
 
 	snprintf(tmp_result, 4, "%d", result);
 
-	app_control_add_extra_data(send_dup, UG_SERVICE_DATA_RESULT, (const char*)tmp_result);
+	app_control_add_extra_data(send_dup, UG_APP_CONTROL_DATA_RESULT, (const char*)tmp_result);
 
 	ug->cbs.result_cb(ug, send_dup, ug->cbs.priv);
 
