@@ -131,15 +131,17 @@ enum ug_option {
 	UG_OPT_INDICATOR_MANUAL = 0x04,
 			/**< Indicator option:
 			Indicator will be handled manually */
-	UG_OPT_OVERLAP_ENABLE = 0x08,
-			/**< Overlap option: Enable indicator overlap  */		
 	UG_OPT_MAX
 };
 
-#define GET_OPT_INDICATOR_VAL(opt) opt % UG_OPT_OVERLAP_ENABLE
-#define GET_OPT_OVERLAP_VAL(opt) opt & UG_OPT_OVERLAP_ENABLE
-
-#define UG_SERVICE_DATA_RESULT "__UG_SEND_REUSLT__"
+/**
+ * @brief Definition for key string for the extra data of app_control that is used for result state of ui-gadget.
+ *        When ug callee (UI gadgets) sends result state using ug_send_result_full(), the ug caller can get the
+ *        result state from ug callee in result parameter of the result_cb().
+ *
+ * @since_tizen 2.3
+ */
+#define UG_APP_CONTROL_DATA_RESULT "__UG_SEND_RESULT__"
 
 /**
  * UI gadget callback type
@@ -161,11 +163,13 @@ struct ug_cbs {
 };
 
 /**
- * Easy-to-use macro of ug_init() for EFL
+ * @brief Definition for easy-to-use api of ug_init() for EFL.
+ *
+ * @since_tizen 2.3
+ *
  * @see ug_init()
  */
-#define UG_INIT_EFL(win, opt) \
-    ug_init_efl(win, opt)
+int UG_INIT_EFL(void *win, enum ug_option opt);
 
 /**
  * Easy-to-use macro of ug_init() for GTK
