@@ -221,11 +221,7 @@ int UG_INIT_EFL(void *win, enum ug_option opt);
  * ...
  * \endcode
  */
-#ifndef UG_WAYLAND
-int ug_init(Display *disp, Window xid, void *win, enum ug_option opt);
-#else
-int ug_init(void *win, enum ug_option opt);
-#endif
+int ug_init(void *disp, unsigned long xid, void *win, enum ug_option opt);
 
 /**
  * \par Description:

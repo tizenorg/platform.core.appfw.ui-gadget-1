@@ -94,7 +94,7 @@ UG_API ui_gadget_h ug_create(ui_gadget_h parent,
 }
 
 #ifndef UG_WAYLAND
-UG_API int ug_init(Display *disp, Window xid, void *win, enum ug_option opt)
+UG_API int ug_init(void *disp, unsigned long xid, void *win, enum ug_option opt)
 {
 	if (!win || !xid || !disp) {
 		_ERR("ug_init() failed: Invalid arguments");
@@ -106,10 +106,10 @@ UG_API int ug_init(Display *disp, Window xid, void *win, enum ug_option opt)
 		return -1;
 	}
 
-	return ugman_init(disp, xid, win, opt);
+	return ugman_init((Display *)disp, (Window)xid, win, opt);
 }
 #else
-UG_API int ug_init(void *win, enum ug_option opt)
+UG_API int ug_init(void *disp, unsigned long xid, void *win, enum ug_option opt)
 {
 	if (opt < UG_OPT_INDICATOR_ENABLE || opt >= UG_OPT_MAX) {
 		_ERR("ug_init() failed: Invalid option");
