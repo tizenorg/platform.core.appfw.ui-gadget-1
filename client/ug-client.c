@@ -571,6 +571,11 @@ static int app_reset(bundle *b, void *data)
 		evas_object_show(ad->win);
 	}
 
+	if (ad->ug) {
+		ug_destroy(ad->ug);
+		ad->ug = NULL;
+	}
+
 	if (ad->data)	/* ug-launcher */
 		app_control_create_event(ad->data, &app_control);
 	else
