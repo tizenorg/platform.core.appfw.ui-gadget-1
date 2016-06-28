@@ -209,7 +209,6 @@ void _ug_client_end_cb(ui_gadget_h ug, void *priv)
 
 	LOGD("_ug_client_end_cb invoked");
 
-	elm_exit();
 }
 
 static Evas_Object *create_win(const char *name)
@@ -572,7 +571,7 @@ static int app_reset(bundle *b, void *data)
 	}
 
 	if (ad->ug) {
-		ug_destroy(ad->ug);
+		ug_destroy_all();
 		ad->ug = NULL;
 	}
 
