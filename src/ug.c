@@ -377,12 +377,21 @@ UG_API int ug_disable_effect(ui_gadget_h ug)
 
 UG_API int ug_is_installed(const char *name)
 {
+	int r, ret = 1;
+	char *ug_file_path;
+
 	if (name == NULL) {
 		_ERR("name is null");
 		return -1;
 	}
 
-	return ug_exist(name);
+	r = ug_module_get_file_path(name, &ug_file_path);
+	if (r != 0)
+		ret = 0;
+
+	free(ug_file_path);
+
+	return ret;
 }
 
 #ifdef ENABLE_UG_CREATE_CB

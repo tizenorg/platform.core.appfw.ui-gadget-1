@@ -33,6 +33,6 @@ struct ug_module {
 
 struct ug_module *ug_module_load(const char *name);
 int ug_module_unload(struct ug_module *module);
-int ug_exist(const char* name);
+int ug_module_get_file_path(const char* name, char **ug_file_path);
 
 #endif				/* __UG_MODULE_H__ */
