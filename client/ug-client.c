@@ -20,8 +20,10 @@
  */
 
 #include <stdio.h>
+#include <dlfcn.h>
 #include <appcore-efl.h>
 #include <ui-gadget.h>
+#include <ug-module.h>
 
 #include <dlog.h>
 #include <aul.h>
@@ -492,8 +494,21 @@ func_out:
 static int app_terminate(void *data)
 {
 	struct appdata *ad = data;
+	char *ug_file_path = NULL;
+	void *handle;
+	int ret;
 
 	LOGD("app_terminate called");
+
+	ret = ug_module_get_file_path(ad->name, &ug_file_path);
+	if (ret == 0) {
+		handle = dlopen(ug_file_path, RTLD_LAZY);
+		if (!handle)
+			LOGE("Failed to dlopen the ug file");
+	}
+
+	if (ug_file_path);
+		free(ug_file_path);
 
 	_ug_client_dbus_signal_handler_fini(data);
 
@@ -512,9 +527,6 @@ static int app_terminate(void *data)
 	}
 
 	app_control_destroy(ad->request);
-
-	if (ad->name)
-		free(ad->name);
 
 	LOGD("app_terminate end");
 
