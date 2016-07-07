@@ -42,6 +42,11 @@
 #define MEM_ADDR_LEN 8
 #define MEM_ADDR_TOT_LEN 17
 
+#ifndef UG_API
+#define UG_API __attribute__ ((visibility("default")))
+#endif
+
+
 static char *__ug_module_get_addr(const char *ug_name)
 {
 	FILE *file;
@@ -278,14 +283,12 @@ int ug_module_unload(struct ug_module *module)
 	return 0;
 }
 
-int ug_exist(const char* name)
+UG_API int ug_module_get_file_path(const char *name, char **ug_file_path)
 {
-	int ret = 1;
-
-	if (__get_ug_info(name, NULL) < 0) {
+	if (__get_ug_info(name, ug_file_path) < 0) {
 		_ERR("error in getting ug file path");
-		ret = 0;
+		return -1;
 	}
 
-	return ret;
+	return 0;
 }
