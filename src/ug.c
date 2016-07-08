@@ -385,7 +385,7 @@ UG_API int ug_is_installed(const char *name)
 		return -1;
 	}
 
-	if (!ug_module_get_file_path(name, &ug_file_path))
+	if (ug_module_get_file_path(name, &ug_file_path) < 0)
 		ret = 0;
 
 	if (ug_file_path)
