@@ -109,6 +109,8 @@ UG_API int ug_init(void *disp, unsigned long xid, void *win, enum ug_option opt)
 	return ugman_init((Display *)disp, (Window)xid, win, opt);
 }
 #else
+
+/* LCOV_EXCL_START */
 UG_API int ug_init(void *disp, unsigned long xid, void *win, enum ug_option opt)
 {
 	if (opt < UG_OPT_INDICATOR_ENABLE || opt >= UG_OPT_MAX) {
@@ -118,12 +120,15 @@ UG_API int ug_init(void *disp, unsigned long xid, void *win, enum ug_option opt)
 
 	return ugman_init(win, opt);
 }
+/* LCOV_EXCL_STOP */
 #endif
 
+/* LCOV_EXCL_START */
 UG_API int UG_INIT_EFL(void *win, enum ug_option opt)
 {
 	return ug_init_efl((Evas_Object *)win, opt);
 }
+/* LCOV_EXCL_STOP */
 
 UG_API int ug_init_efl(Evas_Object *win, enum ug_option opt)
 {

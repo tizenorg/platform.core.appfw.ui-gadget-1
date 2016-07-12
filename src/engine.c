@@ -77,6 +77,7 @@ engine_free:
 	return NULL;
 }
 
+/* LCOV_EXCL_START */
 int ug_engine_unload(struct ug_engine *engine)
 {
 	void (*engine_exit)(struct ug_engine_ops *ops);
@@ -100,3 +101,4 @@ int ug_engine_unload(struct ug_engine *engine)
 	engine = NULL;
 	return 0;
 }
+/* LCOV_EXCL_STOP */
